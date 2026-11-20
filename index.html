@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>黄金价格走势 · 近二十年</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0a08;
+      --bg-elev: #14110c;
+      --bg-soft: #1b1710;
+      --line: rgba(212, 175, 55, 0.22);
+      --gold: #d4af37;
+      --gold-bright: #f0d78c;
+      --gold-dim: #8a7433;
+      --text: #f4ead6;
+      --muted: #9a8e78;
+      --faint: #6e6556;
+      --card: rgba(20, 17, 12, 0.86);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --危机: #e85d4c;
+      --政策: #d4af37;
+      --地缘: #5b8def;
+      --通胀: #e08a3d;
+      --美元: #3db8a8;
+      --央行: #b57edc;
+      --卫生: #e06c9f;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      min-height: 100vh;
+      line-height: 1.65;
+      background:
+        radial-gradient(1200px 600px at 12% -10%, rgba(212, 175, 55, 0.14), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(120, 80, 20, 0.16), transparent 50%),
+        radial-gradient(800px 400px at 50% 120%, rgba(212, 175, 55, 0.07), transparent 50%),
+        var(--bg);
+    }
+    .wrap { width: min(1240px, calc(100% - 40px)); margin: 0 auto; padding: 36px 0 64px; }
+    header { margin-bottom: 28px; }
+    .kicker {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 10px;
+      font-weight: 500;
+    }
+    h1 {
+      font-family: "Noto Serif SC", serif;
+      font-weight: 700;
+      font-size: clamp(36px, 5vw, 64px);
+      letter-spacing: 0.06em;
+      margin: 0 0 14px;
+      color: var(--gold-bright);
+      text-shadow: 0 0 40px rgba(212, 175, 55, 0.18);
+    }
+    .subtitle {
+      max-width: 46em;
+      color: var(--muted);
+      font-size: 15px;
+      margin: 0;
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 28px 0 22px;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 18px 15px;
+      box-shadow: var(--shadow);
+    }
+    .kpi .label { color: var(--faint); font-size: 12px; letter-spacing: 0.08em; }
+    .kpi .value {
+      font-family: "Noto Serif SC", serif;
+      font-size: 26px;
+      color: var(--gold-bright);
+      margin-top: 4px;
+      letter-spacing: 0.02em;
+    }
+    .kpi .hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px 18px 10px;
+      box-shadow: var(--shadow);
+    }
+    .toolbar {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      padding: 4px 8px 14px;
+    }
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 16px;
+    }
+    .toolbar .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-right: 4px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+    .chip {
+      appearance: none;
+      border: 1px solid transparent;
+      background: var(--bg-soft);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 5px 11px 5px 8px;
+      font: 500 12px/1.2 "Noto Sans SC", sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.15s ease;
+    }
+    .chip:hover { border-color: rgba(212,175,55,0.4); }
+    .chip.is-off { opacity: 0.38; filter: grayscale(0.4); }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent);
+      background: var(--c);
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--gold-bright);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font: 500 12px/1.2 "Noto Sans SC", sans-serif;
+      cursor: pointer;
+    }
+    .btn:hover { background: rgba(212,175,55,0.1); }
+    .toolbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+    .toolbar-group.is-grow { flex: 1; }
+    .ccy-switch { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+    .ccy-btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font: 500 12px/1.2 "Noto Sans SC", sans-serif;
+      cursor: pointer;
+    }
+    .ccy-btn:hover { border-color: rgba(212,175,55,0.45); color: var(--gold-bright); }
+    .ccy-btn.is-on {
+      background: rgba(212,175,55,0.16);
+      border-color: var(--gold);
+      color: var(--gold-bright);
+    }
+    .range-select {
+      appearance: none;
+      -webkit-appearance: none;
+      border: 1px solid var(--line);
+      background: var(--bg-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23f0d78c' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
+      color: var(--gold-bright);
+      border-radius: 999px;
+      padding: 6px 28px 6px 14px;
+      font: 500 12px/1.2 "Noto Sans SC", sans-serif;
+      cursor: pointer;
+      outline: none;
+    }
+    .range-select:hover { border-color: rgba(212,175,55,0.45); }
+    .range-select:focus { border-color: var(--gold); }
+    .range-select option { background: #1b1710; color: #f4ead6; }
+    #chart { width: 100%; height: 620px; position: relative; }
+    #chart .crosshair-v,
+    #chart .crosshair-h,
+    #chart .crosshair-dot,
+    #chart .crosshair-label,
+    #chart .gold-tip {
+      pointer-events: none !important;
+      position: absolute;
+      z-index: 8;
+    }
+    #chart .crosshair-v {
+      width: 0;
+      border-left: 1px dashed rgba(240, 215, 140, 0.5);
+      margin-left: -0.5px;
+    }
+    #chart .crosshair-h {
+      height: 0;
+      border-top: 1px dashed rgba(240, 215, 140, 0.5);
+      margin-top: -0.5px;
+    }
+    #chart .crosshair-dot {
+      width: 8px;
+      height: 8px;
+      margin: -4px 0 0 -4px;
+      border-radius: 50%;
+      background: #f0d78c;
+      box-shadow: 0 0 0 3px rgba(240, 215, 140, 0.22);
+      z-index: 9;
+    }
+    #chart .crosshair-label {
+      background: #2a2418;
+      color: #f0d78c;
+      font-size: 11px;
+      line-height: 1.2;
+      padding: 3px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 9;
+    }
+    #chart .gold-tip {
+      z-index: 10;
+      background: rgba(18, 15, 10, 0.95);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+    }
+    #fallback {
+      display: none;
+      height: 620px;
+      position: relative;
+    }
+    #fallback canvas { width: 100%; height: 100%; display: block; }
+    .hint-bar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--faint);
+      font-size: 12px;
+      padding: 4px 8px 10px;
+    }
+    .legends {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .legend-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: rgba(20,17,12,0.55);
+    }
+    .legend-card h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+    .legend-row { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+    .mag {
+      display: inline-block;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+    }
+    footer {
+      margin-top: 34px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 12.5px;
+    }
+    footer h2 {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    footer a { color: #c8b27a; text-decoration: none; border-bottom: 1px solid rgba(200,178,122,0.35); }
+    footer a:hover { color: var(--gold-bright); }
+    footer p { margin: 0 0 8px; max-width: 92em; }
+    .tooltip-box { min-width: 240px; max-width: 360px; }
+    .tt-date { color: #cfc3a8; font-size: 12px; letter-spacing: 0.06em; }
+    .tt-price {
+      font-family: "Noto Serif SC", serif;
+      font-size: 22px;
+      color: var(--gold-bright);
+      margin: 2px 0 10px;
+    }
+    .tt-unit { font-size: 12px; color: var(--muted); margin-left: 6px; font-family: "Noto Sans SC", sans-serif; }
+    .tt-ev { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(212,175,55,0.16); }
+    .tt-ev:first-of-type { margin-top: 0; }
+    .tt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .tt-title { display: block; font-weight: 600; margin: 1px 0 3px; }
+    .tt-sum { color: #d9d0bf; }
+    .tt-empty { color: var(--muted); font-size: 12px; }
+    @media (max-width: 980px) {
+      .kpis, .legends { grid-template-columns: 1fr 1fr; }
+      #chart, #fallback { height: 520px; }
+    }
+    @media (max-width: 640px) {
+      .wrap { width: calc(100% - 24px); padding-top: 22px; }
+      .kpis, .legends { grid-template-columns: 1fr; }
+      #chart, #fallback { height: 460px; }
+      h1 { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="kicker">伦敦黄金上午定盘 · 2006.11–2026.11</p>
+      <h1>黄金价格走势</h1>
+      <p class="subtitle">把近二十年影响黄金走势的重大事件插入图中。将鼠标移到曲线上的某个点或事件标记，可查看当日价格，以及附近事件的简介；简介颜色按事件类型区分，字号与徽章按影响大小变化。</p>
+    </header>
+
+    <section class="kpis" id="kpis"></section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="toolbar-row">
+          <div class="toolbar-group is-grow">
+            <span class="label">事件类型</span>
+            <div class="chips" id="chips"></div>
+          </div>
+        </div>
+        <div class="toolbar-row">
+          <div class="toolbar-group">
+            <span class="label">计价货币</span>
+            <div class="ccy-switch" id="currencySwitch"></div>
+          </div>
+          <div class="toolbar-group">
+            <span class="label">时间范围</span>
+            <select id="rangeSelect" class="range-select" aria-label="时间范围">
+              <option value="1" selected>最近一年</option>
+              <option value="5">最近五年</option>
+              <option value="10">最近十年</option>
+              <option value="20">最近二十年</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="chart"></div>
+      <div id="fallback"><canvas id="fbCanvas"></canvas></div>
+      <div class="hint-bar">
+        <span>默认显示最近一年，可用下拉框切换五年、十年或二十年；也可拖动或滚动滚轮缩放。点击类型标签可显示或隐藏该类事件。</span>
+        <span id="latestNote"></span>
+      </div>
+    </section>
+
+    <section class="legends">
+      <div class="legend-card">
+        <h2>事件类型</h2>
+        <div class="legend-row" id="typeLegend"></div>
+      </div>
+      <div class="legend-card">
+        <h2>影响大小</h2>
+        <div class="legend-row">
+          <span class="legend-item"><i class="mag" style="width:8px;height:8px"></i>较小（1）</span>
+          <span class="legend-item"><i class="mag" style="width:13px;height:13px"></i>中等（2）</span>
+          <span class="legend-item"><i class="mag" style="width:18px;height:18px"></i>重大转折（3）</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <h2>数据说明</h2>
+      <p id="srcLine"></p>
+      <p>价格原序列为美元/金衡盎司，频率为伦敦营业日的每日上午定盘（LBMA Gold Price AM，早期亦称 London Gold Fix AM）。页面可按当日汇率把价格换算为人民币、欧元、英镑或日元。人民币按每克计价（1 金衡盎司 = 31.1034768 克），其他货币仍为每金衡盎司。人民币汇率优先采用美联储 H.10 纽约午盘（FRED 序列 DEXCHUS，截至 2026-11-13）；其后尚未公布的交易日，以及欧元、英镑、日元，采用欧洲央行参考汇率。周末与假日缺测向前一个营业日填充。事件来自官方公告或公开报道，简介仅说明事件及其与金价的关系，并附来源链接；事件并不穷尽全部影响因素。</p>
+      <p>Westmetall 2008 年部分日期混用了下午定盘，故 2008 年改用 SD Bullion 上午定盘以保持口径一致。2009 年之后的西冶金表格中有三处明显刊误（2022-07-20、2024-05-17、2026-01-02），已按同日 SD Bullion 上午定盘更正，详见 <a href="data/prices.json">prices.json</a>。</p>
+      <p id="updateLine"></p>
+    </footer>
+  </div>
+
+  <script src="data/data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
+  <script>
+    const TYPE_COLORS = {
+      "金融危机": "#e85d4c",
+      "货币政策": "#d4af37",
+      "地缘政治": "#5b8def",
+      "通胀经济": "#e08a3d",
+      "美元汇率": "#3db8a8",
+      "央行购金": "#b57edc",
+      "公共卫生": "#e06c9f"
+    };
+    const MAG_LABEL = { 1: "较小", 2: "中等", 3: "重大转折" };
+    const MAG_SIZE = { 1: 9, 2: 14, 3: 20 };
+    const MAG_FONT = { 1: 12, 2: 13, 3: 15 };
+
+    const bundle = window.GOLD_DATA;
+    const meta = bundle.prices.meta;
+    const prices = bundle.prices.prices;
+    const events = bundle.events.events.slice().sort((a, b) => a.date.localeCompare(b.date));
+    const activeTypes = new Set(Object.keys(TYPE_COLORS));
+    const fxRates = bundle.fx.rates;
+    const dateIndex = new Map(prices.map((p, i) => [p.date, i]));
+
+    const TROY_OUNCE_GRAMS = 31.1034768;
+    const CURRENCIES = {
+      USD: { code: "USD", label: "美元", symbol: "$", unit: "美元 / 盎司", short: "美元/盎司", digits: 2, perGram: false },
+      CNY: { code: "CNY", label: "人民币/克", symbol: "¥", unit: "人民币 / 克", short: "元/克", digits: 2, idx: 0, perGram: true },
+      EUR: { code: "EUR", label: "欧元", symbol: "€", unit: "欧元 / 盎司", short: "欧元/盎司", digits: 2, idx: 1, perGram: false },
+      GBP: { code: "GBP", label: "英镑", symbol: "£", unit: "英镑 / 盎司", short: "英镑/盎司", digits: 2, idx: 2, perGram: false },
+      JPY: { code: "JPY", label: "日元", symbol: "¥", unit: "日元 / 盎司", short: "日元/盎司", digits: 0, idx: 3, perGram: false }
+    };
+    let currency = "CNY";
+    let rangeYears = 1;
+    let zoomReady = false;
+
+    const WEEK = "日一二三四五六";
+    const fmtMoney = (n, digits) => n.toLocaleString("en-US", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+    const fmtDate = (s) => {
+      const [y, m, d] = s.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      return `${y}年${m}月${d}日 星期${WEEK[dt.getUTCDay()]}`;
+    };
+    const dayDiff = (a, b) => Math.abs((Date.parse(a) - Date.parse(b)) / 86400000);
+    function ccy() { return CURRENCIES[currency]; }
+    function rateAt(i, code) {
+      if (code === "USD") return 1;
+      return fxRates[i][CURRENCIES[code].idx];
+    }
+    function indexOnOrBefore(date) {
+      if (dateIndex.has(date)) return dateIndex.get(date);
+      let lo = 0, hi = prices.length - 1, ans = 0;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (prices[mid].date <= date) { ans = mid; lo = mid + 1; }
+        else hi = mid - 1;
+      }
+      return ans;
+    }
+    function toCcy(date, usd, code) {
+      const c = CURRENCIES[code || currency];
+      let v = usd * rateAt(indexOnOrBefore(date), c.code);
+      if (c.perGram) v = v / TROY_OUNCE_GRAMS;
+      return v;
+    }
+    function fmtPrice(n, code) {
+      const c = CURRENCIES[code || currency];
+      return c.symbol + fmtMoney(n, c.digits);
+    }
+    function unitSuffix(code) {
+      return CURRENCIES[code || currency].perGram ? "克" : "盎司";
+    }
+    function yearsAgo(iso, years) {
+      const [y, m, d] = iso.split("-").map(Number);
+      return new Date(Date.UTC(y - years, m - 1, d)).toISOString().slice(0, 10);
+    }
+    function rangeStartDate(years) {
+      years = years == null ? rangeYears : years;
+      if (years >= 20) return prices[0].date;
+      const start = yearsAgo(prices[prices.length - 1].date, years);
+      const hit = prices.find((p) => p.date >= start);
+      return hit ? hit.date : prices[0].date;
+    }
+    function rangeStartIndex(years) {
+      const start = rangeStartDate(years);
+      return prices.findIndex((p) => p.date >= start);
+    }
+    function applyRange(years) {
+      rangeYears = years;
+      if (chart) {
+        chart.dispatchAction({
+          type: "dataZoom",
+          startValue: rangeStartDate(years),
+          endValue: last.date
+        });
+      }
+    }
+    function yNiceMin(v) {
+      const span = Math.max(1, v.max - v.min);
+      const step = span >= 200000 ? 20000 : span >= 50000 ? 5000 : span >= 10000 ? 1000 : span >= 2000 ? 100 : span >= 400 ? 50 : 10;
+      return Math.max(0, Math.floor((v.min * 0.9) / step) * step);
+    }
+
+    const first = prices[0];
+    const last = prices[prices.length - 1];
+    const hi = meta.range_high;
+    const lo = meta.range_low;
+
+    function renderKpis() {
+      const firstV = toCcy(first.date, first.price);
+      const lastV = toCcy(last.date, last.price);
+      const hiV = toCcy(hi.date, hi.price);
+      const loV = toCcy(lo.date, lo.price);
+      const chg = ((lastV / firstV) - 1) * 100;
+      document.getElementById("kpis").innerHTML = [
+        ["最新定价", fmtPrice(lastV), last.date + "（伦敦上午定盘）"],
+        ["区间最高", fmtPrice(hiV), hi.date],
+        ["区间最低", fmtPrice(loV), lo.date],
+        ["二十年间变化", (chg >= 0 ? "+" : "") + chg.toFixed(1) + "%", first.date + " 起"]
+      ].map(([label, value, hint]) =>
+        `<article class="kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></article>`
+      ).join("");
+      document.getElementById("latestNote").textContent =
+        "最新已公布定价：" + last.date + "，" + fmtPrice(lastV) + " / " + unitSuffix() + "。";
+    }
+    renderKpis();
+    document.getElementById("srcLine").innerHTML =
+      "主序列为伦敦黄金上午定盘，共 " + prices.length + " 个交易日（" + first.date + " 至 " + last.date + "）。" +
+      "2006–2007 年来自 <a href='http://www.321gold.com/archives/fix2006.html' target='_blank' rel='noopener'>321gold</a>；" +
+      "2008 年来自 <a href='https://sdbullion.com/gold-prices-2008' target='_blank' rel='noopener'>SD Bullion</a>；" +
+      "2009–2026 年来自 <a href='https://www.westmetall.com/en/markdaten.php?action=table&amp;field=USD_ozt_London&amp;year=2026' target='_blank' rel='noopener'>Westmetall</a>。" +
+      "交叉核对还包括世界黄金协会、英国皇家铸币厂、GoldSilver 与路透社报道。" +
+      "人民币汇率来自 <a href='https://fred.stlouisfed.org/series/DEXCHUS' target='_blank' rel='noopener'>美联储 H.10 / FRED DEXCHUS</a>（纽约午盘，截至 2026-11-13 为 6.6710），此后交易日以及欧元、英镑、日元来自 <a href='https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html' target='_blank' rel='noopener'>欧洲央行参考汇率</a>。" +
+      "完整引用见 <a href='data/prices.json'>prices.json</a>、<a href='data/events.json'>events.json</a> 与 <a href='data/fx.json'>fx.json</a>。";
+    document.getElementById("updateLine").textContent =
+      "页面更新日期：2026年11月20日（亚洲/上海时区）。" + meta.coverage_note;
+
+    const chips = document.getElementById("chips");
+    const typeLegend = document.getElementById("typeLegend");
+    Object.keys(TYPE_COLORS).forEach((type) => {
+      const color = TYPE_COLORS[type];
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.dataset.type = type;
+      chip.innerHTML = `<i class="dot" style="--c:${color}"></i>${type}`;
+      chip.addEventListener("click", () => {
+        if (activeTypes.has(type) && activeTypes.size === 1) return;
+        if (activeTypes.has(type)) activeTypes.delete(type);
+        else activeTypes.add(type);
+        chip.classList.toggle("is-off", !activeTypes.has(type));
+        renderChart();
+      });
+      chips.appendChild(chip);
+      typeLegend.insertAdjacentHTML("beforeend",
+        `<span class="legend-item"><i class="dot" style="--c:${color}"></i>${type}</span>`);
+    });
+
+    const ccyBox = document.getElementById("currencySwitch");
+    Object.values(CURRENCIES).forEach((c) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ccy-btn" + (c.code === currency ? " is-on" : "");
+      btn.dataset.code = c.code;
+      btn.textContent = c.label;
+      btn.addEventListener("click", () => setCurrency(c.code));
+      ccyBox.appendChild(btn);
+    });
+    function setCurrency(code) {
+      if (currency === code) return;
+      currency = code;
+      ccyBox.querySelectorAll(".ccy-btn").forEach((b) => {
+        b.classList.toggle("is-on", b.dataset.code === code);
+      });
+      renderKpis();
+      renderChart();
+    }
+
+    function nearbyEvents(date, hoverEvent) {
+      const list = events.filter((ev) => activeTypes.has(ev.type) && dayDiff(ev.date, date) <= 14);
+      if (hoverEvent && !list.some((ev) => ev.date === hoverEvent.date && ev.title === hoverEvent.title)) {
+        list.unshift(hoverEvent);
+      }
+      list.sort((a, b) => {
+        const da = dayDiff(a.date, date);
+        const db = dayDiff(b.date, date);
+        if (da !== db) return da - db;
+        return b.magnitude - a.magnitude;
+      });
+      return list.slice(0, 4);
+    }
+
+    function tooltipHtml(date, price, hoverEvent) {
+      const evs = nearbyEvents(date, hoverEvent);
+      let html = `<div class="tooltip-box"><div class="tt-date">${fmtDate(date)}</div>`;
+      html += `<div class="tt-price">${fmtPrice(price)}<span class="tt-unit">/ ${unitSuffix()}</span></div>`;
+      if (!evs.length) {
+        html += `<div class="tt-empty">附近两周暂无已收录事件</div></div>`;
+        return html;
+      }
+      evs.forEach((ev) => {
+        const c = TYPE_COLORS[ev.type];
+        const fs = MAG_FONT[ev.magnitude];
+        html += `<div class="tt-ev">
+          <div class="tt-badge" style="color:${c};font-size:${fs}px">
+            <i class="dot" style="--c:${c};width:${4+ev.magnitude*2}px;height:${4+ev.magnitude*2}px"></i>
+            ${ev.type} · ${MAG_LABEL[ev.magnitude]}
+          </div>
+          <span class="tt-title" style="color:${c};font-size:${fs + 1}px">${ev.title}</span>
+          <div class="tt-sum" style="color:${c};opacity:0.92;font-size:${fs}px">${ev.summary}</div>
+          <div class="tt-date">${ev.date}${ev.price_is_nearest ? "（非交易日，定价取 " + ev.price_date + "）" : (ev.date !== date ? "（邻近）" : "")}</div>
+        </div>`;
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    let chart;
+    function scatterData() {
+      return events.filter((ev) => activeTypes.has(ev.type)).map((ev) => ({
+        value: [ev.price_date, toCcy(ev.price_date, ev.price)],
+        event: ev,
+        symbolSize: MAG_SIZE[ev.magnitude],
+        itemStyle: {
+          color: TYPE_COLORS[ev.type],
+          borderColor: "#0b0a08",
+          borderWidth: 1.5,
+          shadowBlur: ev.magnitude === 3 ? 12 : 6,
+          shadowColor: TYPE_COLORS[ev.type]
+        }
+      }));
+    }
+
+    function renderChart() {
+      if (!window.echarts || !chart) return;
+      const line = prices.map((p) => [p.date, toCcy(p.date, p.price)]);
+      const zoomBase = {
+        xAxisIndex: 0,
+        filterMode: "filter",
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false
+      };
+      const insideZoom = Object.assign({ type: "inside" }, zoomBase);
+      const sliderZoom = Object.assign({
+        type: "slider",
+        height: 22,
+        bottom: 28,
+        borderColor: "transparent",
+        backgroundColor: "rgba(255,255,255,0.03)",
+        fillerColor: "rgba(212,175,55,0.18)",
+        handleStyle: { color: "#d4af37" },
+        textStyle: { color: "#9a8e78" },
+        dataBackground: { lineStyle: { color: "#d4af37" }, areaStyle: { color: "rgba(212,175,55,0.2)" } },
+        selectedDataBackground: { lineStyle: { color: "#f0d78c" }, areaStyle: { color: "rgba(240,215,140,0.25)" } }
+      }, zoomBase);
+      const cur = ccy();
+      const option = {
+        backgroundColor: "transparent",
+        animationDuration: 700,
+        animationDurationUpdate: 0,
+        tooltip: { show: false },
+        axisPointer: { show: false },
+        grid: { left: currency === "JPY" ? 86 : 72, right: 28, top: 36, bottom: 86 },
+        xAxis: {
+          type: "time",
+          axisLine: { lineStyle: { color: "rgba(212,175,55,0.35)" } },
+          axisLabel: { color: "#9a8e78", fontSize: 11, hideOverlap: true },
+          splitLine: { show: false },
+          axisPointer: { show: false }
+        },
+        yAxis: {
+          type: "value",
+          min: yNiceMin,
+          name: cur.unit,
+          nameTextStyle: { color: "#9a8e78", padding: [0, 0, 0, 8] },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: {
+            color: "#9a8e78",
+            formatter: (v) => cur.symbol + v.toLocaleString("en-US")
+          },
+          splitLine: { lineStyle: { color: "rgba(212,175,55,0.08)" } },
+          axisPointer: { show: false }
+        },
+        dataZoom: [insideZoom, sliderZoom],
+        series: [
+          {
+            id: "price",
+            name: "伦敦上午定盘",
+            type: "line",
+            showSymbol: false,
+            symbol: "circle",
+            symbolSize: 7,
+            lineStyle: { width: 2.2, color: "#e3c56a" },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "rgba(212,175,55,0.28)" },
+                { offset: 1, color: "rgba(212,175,55,0.00)" }
+              ])
+            },
+            data: line,
+            z: 2,
+            silent: true
+          },
+          {
+            id: "events",
+            name: "事件",
+            type: "scatter",
+            data: scatterData(),
+            z: 3,
+            emphasis: { scale: 1.25, disabled: false },
+            tooltip: { show: false }
+          }
+        ]
+      };
+      if (!zoomReady) {
+        insideZoom.startValue = rangeStartDate();
+        insideZoom.endValue = last.date;
+        sliderZoom.startValue = rangeStartDate();
+        sliderZoom.endValue = last.date;
+        option.dataZoom = [insideZoom, sliderZoom];
+      }
+      chart.setOption(option, false);
+      zoomReady = true;
+    }
+
+    function bindCustomPointer(el) {
+      const vLine = document.createElement("div");
+      const hLine = document.createElement("div");
+      const dot = document.createElement("div");
+      const xLabel = document.createElement("div");
+      const yLabel = document.createElement("div");
+      const tip = document.createElement("div");
+      vLine.className = "crosshair-v";
+      hLine.className = "crosshair-h";
+      dot.className = "crosshair-dot";
+      xLabel.className = "crosshair-label";
+      yLabel.className = "crosshair-label";
+      tip.className = "gold-tip tooltip-box";
+      [vLine, hLine, dot, xLabel, yLabel, tip].forEach((n) => {
+        n.style.display = "none";
+        el.appendChild(n);
+      });
+
+      const priceTs = prices.map((p) => Date.parse(p.date + "T00:00:00Z"));
+      function nearestIndex(ts) {
+        let lo = 0, hi = priceTs.length - 1;
+        if (ts <= priceTs[0]) return 0;
+        if (ts >= priceTs[hi]) return hi;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          if (priceTs[mid] === ts) return mid;
+          if (priceTs[mid] < ts) lo = mid + 1;
+          else hi = mid - 1;
+        }
+        return (ts - priceTs[hi] <= priceTs[lo] - ts) ? hi : lo;
+      }
+
+      function gridRect() {
+        const grid = chart.getModel().getComponent("grid", 0);
+        return grid && grid.coordinateSystem ? grid.coordinateSystem.getRect() : null;
+      }
+
+      function hitEvent(px, py) {
+        let best = null, bestD = 1e9;
+        scatterData().forEach((item) => {
+          const pix = chart.convertToPixel({ gridIndex: 0 }, item.value);
+          if (!pix) return;
+          const d = Math.hypot(pix[0] - px, pix[1] - py);
+          const thresh = item.symbolSize / 2 + 8;
+          if (d <= thresh && d < bestD) {
+            bestD = d;
+            best = item.event;
+          }
+        });
+        return best;
+      }
+
+      let pinned = null;
+
+      function hidePointer() {
+        [vLine, hLine, dot, xLabel, yLabel, tip].forEach((n) => { n.style.display = "none"; });
+      }
+
+      function showAt(px, py, evOverride) {
+        if (!chart || !chart.containPixel("grid", [px, py])) {
+          if (!pinned) hidePointer();
+          return;
+        }
+        const data = chart.convertFromPixel({ gridIndex: 0 }, [px, py]);
+        if (!data) return;
+        const idx = nearestIndex(typeof data[0] === "number" ? data[0] : Date.parse(data[0]));
+        const p = prices[idx];
+        const yVal = toCcy(p.date, p.price);
+        const pix = chart.convertToPixel({ gridIndex: 0 }, [p.date, yVal]);
+        const rect = gridRect();
+        if (!pix || !rect) return;
+
+        const evHit = evOverride || hitEvent(px, py);
+        const x = pix[0], y = pix[1];
+
+        vLine.style.display = "block";
+        vLine.style.left = x + "px";
+        vLine.style.top = rect.y + "px";
+        vLine.style.height = rect.height + "px";
+
+        hLine.style.display = "block";
+        hLine.style.left = rect.x + "px";
+        hLine.style.top = y + "px";
+        hLine.style.width = rect.width + "px";
+
+        dot.style.display = "block";
+        dot.style.left = x + "px";
+        dot.style.top = y + "px";
+
+        xLabel.style.display = "block";
+        xLabel.textContent = fmtDate(p.date);
+        xLabel.style.left = "0px";
+        xLabel.style.top = (rect.y + rect.height + 6) + "px";
+        const xw = xLabel.offsetWidth;
+        xLabel.style.left = Math.max(rect.x, Math.min(x - xw / 2, rect.x + rect.width - xw)) + "px";
+
+        yLabel.style.display = "block";
+        yLabel.textContent = fmtPrice(yVal);
+        yLabel.style.top = (y - 10) + "px";
+        yLabel.style.left = "0px";
+        const yw = yLabel.offsetWidth;
+        yLabel.style.left = Math.max(4, rect.x - yw - 8) + "px";
+
+        tip.style.display = "block";
+        tip.innerHTML = tooltipHtml(p.date, yVal, evHit || pinned).replace(/^<div class="tooltip-box">/, "").replace(/<\/div>$/, "");
+        const boxW = tip.offsetWidth, boxH = tip.offsetHeight;
+        let bx = x + 16, by = y - 20;
+        if (bx + boxW > rect.x + rect.width) bx = x - boxW - 16;
+        if (by + boxH > rect.y + rect.height) by = rect.y + rect.height - boxH;
+        if (by < rect.y) by = rect.y;
+        if (bx < rect.x) bx = rect.x;
+        tip.style.left = bx + "px";
+        tip.style.top = by + "px";
+      }
+
+      const zr = chart.getZr();
+      zr.on("mousemove", (e) => {
+        if (e.event && e.event.buttons) return;
+        showAt(e.offsetX, e.offsetY, pinned);
+      });
+      zr.on("globalout", () => {
+        pinned = null;
+        hidePointer();
+      });
+      el.addEventListener("mouseleave", () => {
+        pinned = null;
+        hidePointer();
+      });
+      zr.on("click", (e) => {
+        if (!chart.containPixel("grid", [e.offsetX, e.offsetY])) return;
+        const ev = hitEvent(e.offsetX, e.offsetY);
+        pinned = ev || null;
+        showAt(e.offsetX, e.offsetY, ev || null);
+      });
+      chart.on("click", { seriesId: "events" }, (params) => {
+        const ev = params.data && params.data.event;
+        if (!ev) return;
+        pinned = ev;
+        const pix = chart.convertToPixel({ gridIndex: 0 }, [ev.price_date, toCcy(ev.price_date, ev.price)]);
+        if (pix) showAt(pix[0], pix[1], ev);
+      });
+    }
+
+    function mountEcharts() {
+      const el = document.getElementById("chart");
+      chart = echarts.init(el, null, { renderer: "canvas" });
+      renderChart();
+      bindCustomPointer(el);
+      window.addEventListener("resize", () => chart && chart.resize());
+      document.getElementById("rangeSelect").addEventListener("change", (e) => {
+        applyRange(Number(e.target.value));
+      });
+    }
+
+    function mountFallback() {
+      document.getElementById("chart").style.display = "none";
+      const fb = document.getElementById("fallback");
+      fb.style.display = "block";
+      const canvas = document.getElementById("fbCanvas");
+      const ctx = canvas.getContext("2d");
+      const pad = { l: 64, r: 18, t: 24, b: 40 };
+      const visible = { start: rangeStartIndex(), end: prices.length - 1 };
+      let hover = null;
+
+      function layout() {
+        const rect = fb.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return rect;
+      }
+      function xOf(i, w) { return pad.l + (i - visible.start) / (visible.end - visible.start) * (w - pad.l - pad.r); }
+      function yOf(p, h, loP, hiP) { return pad.t + (1 - (p - loP) / (hiP - loP)) * (h - pad.t - pad.b); }
+
+      function draw(rect, mx, my) {
+        const w = rect.width, h = rect.height;
+        const slice = prices.slice(visible.start, visible.end + 1);
+        const vals = slice.map((p) => toCcy(p.date, p.price));
+        const loP = Math.min(...vals) * 0.96;
+        const hiP = Math.max(...vals) * 1.04;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "rgba(20,17,12,0.2)";
+        ctx.fillRect(0, 0, w, h);
+        ctx.beginPath();
+        slice.forEach((p, idx) => {
+          const x = xOf(visible.start + idx, w);
+          const y = yOf(toCcy(p.date, p.price), h, loP, hiP);
+          if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = "#e3c56a";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        const evs = events.filter((ev) => activeTypes.has(ev.type));
+        evs.forEach((ev) => {
+          const i = prices.findIndex((p) => p.date === ev.price_date);
+          if (i < visible.start || i > visible.end) return;
+          const x = xOf(i, w);
+          const y = yOf(toCcy(ev.price_date, ev.price), h, loP, hiP);
+          ctx.beginPath();
+          ctx.fillStyle = TYPE_COLORS[ev.type];
+          ctx.arc(x, y, MAG_SIZE[ev.magnitude] / 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        hover = null;
+        if (mx != null) {
+          let best = 0, bestD = 1e9;
+          slice.forEach((p, idx) => {
+            const d = Math.abs(xOf(visible.start + idx, w) - mx);
+            if (d < bestD) { bestD = d; best = visible.start + idx; }
+          });
+          const p = prices[best];
+          const x = xOf(best, w);
+          const yVal = toCcy(p.date, p.price);
+          const y = yOf(yVal, h, loP, hiP);
+          ctx.strokeStyle = "rgba(240,215,140,0.4)";
+          ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, h - pad.b); ctx.stroke();
+          ctx.fillStyle = "#f0d78c";
+          ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+          hover = p;
+          const boxW = 320, boxH = 160;
+          let bx = Math.min(w - boxW - 8, Math.max(8, x + 16));
+          let by = Math.min(h - boxH - 8, Math.max(8, y - 20));
+          ctx.fillStyle = "rgba(18,15,10,0.94)";
+          ctx.strokeStyle = "rgba(212,175,55,0.35)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(bx, by, boxW, boxH, 12); else ctx.rect(bx, by, boxW, boxH);
+          ctx.fill(); ctx.stroke();
+          const evList = nearbyEvents(p.date);
+          ctx.fillStyle = "#f0d78c";
+          ctx.font = "16px 'Noto Serif SC', serif";
+          ctx.fillText(fmtPrice(yVal) + " / " + unitSuffix(), bx + 14, by + 28);
+          ctx.fillStyle = "#cfc3a8";
+          ctx.font = "12px 'Noto Sans SC', sans-serif";
+          ctx.fillText(fmtDate(p.date), bx + 14, by + 48);
+          evList.slice(0, 2).forEach((ev, i) => {
+            ctx.fillStyle = TYPE_COLORS[ev.type];
+            ctx.font = MAG_FONT[ev.magnitude] + "px 'Noto Sans SC', sans-serif";
+            ctx.fillText(ev.type + " · " + ev.title, bx + 14, by + 74 + i * 36);
+            ctx.fillText(ev.summary.slice(0, 28) + "…", bx + 14, by + 90 + i * 36);
+          });
+          if (!evList.length) {
+            ctx.fillStyle = "#9a8e78";
+            ctx.fillText("附近两周暂无已收录事件", bx + 14, by + 80);
+          }
+        }
+      }
+
+      let rect = layout();
+      draw(rect);
+      canvas.addEventListener("mousemove", (e) => {
+        const r = canvas.getBoundingClientRect();
+        draw(rect, e.clientX - r.left, e.clientY - r.top);
+      });
+      canvas.addEventListener("mouseleave", () => draw(rect));
+      window.addEventListener("resize", () => { rect = layout(); draw(rect); });
+      document.getElementById("rangeSelect").addEventListener("change", (e) => {
+        rangeYears = Number(e.target.value);
+        visible.start = rangeStartIndex();
+        visible.end = prices.length - 1;
+        draw(rect);
+      });
+    }
+
+    if (window.echarts) mountEcharts();
+    else mountFallback();
+  </script>
+</body>
+</html>
