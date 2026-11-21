@@ -68,7 +68,7 @@
     }
     .kpis {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 14px;
       margin: 28px 0 22px;
     }
@@ -79,6 +79,10 @@
       padding: 16px 18px 15px;
       box-shadow: var(--shadow);
     }
+    .kpi.is-spot {
+      border-color: rgba(240, 215, 140, 0.42);
+      box-shadow: 0 0 0 1px rgba(240, 215, 140, 0.08), var(--shadow);
+    }
     .kpi .label { color: var(--faint); font-size: 12px; letter-spacing: 0.08em; }
     .kpi .value {
       font-family: "Noto Serif SC", serif;
@@ -86,6 +90,12 @@
       color: var(--gold-bright);
       margin-top: 4px;
       letter-spacing: 0.02em;
+    }
+    .kpi .value.is-wait {
+      color: var(--muted);
+      font-size: 20px;
+      font-family: "Noto Sans SC", sans-serif;
+      font-weight: 500;
     }
     .kpi .hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
     .panel {
@@ -384,6 +394,9 @@
     .tt-title { display: block; font-weight: 600; margin: 1px 0 3px; }
     .tt-sum { color: #d9d0bf; }
     .tt-empty { color: var(--muted); font-size: 12px; }
+    @media (max-width: 1180px) {
+      .kpi .value { font-size: 22px; }
+    }
     @media (max-width: 980px) {
       .kpis, .legends { grid-template-columns: 1fr 1fr; }
       #chart, #fallback { height: 520px; }
@@ -457,7 +470,7 @@
     <footer>
       <h2>数据说明</h2>
       <p id="srcLine"></p>
-      <p>价格原序列为美元/金衡盎司，频率为伦敦营业日的每日上午定盘（LBMA Gold Price AM，早期亦称 London Gold Fix AM）。页面可按当日汇率把价格换算为人民币、欧元、英镑或日元。人民币按每克计价（1 金衡盎司 = 31.1034768 克），其他货币仍为每金衡盎司。人民币汇率优先采用美联储 H.10 纽约午盘（FRED 序列 DEXCHUS，截至 2026-11-13）；其后尚未公布的交易日，以及欧元、英镑、日元，采用欧洲央行参考汇率。周末与假日缺测向前一个营业日填充。事件来自官方公告或公开报道，简介仅说明事件及其与金价的关系，并附来源链接；事件并不穷尽全部影响因素。</p>
+      <p>价格原序列为美元/金衡盎司，频率为伦敦营业日的每日上午定盘（LBMA Gold Price AM，早期亦称 London Gold Fix AM）。页面可按当日汇率把价格换算为人民币、欧元、英镑或日元。人民币按每克计价（1 金衡盎司 = 31.1034768 克），其他货币仍为每金衡盎司。人民币汇率优先采用美联储 H.10 纽约午盘（FRED 序列 DEXCHUS，截至 2026-11-13）；其后尚未公布的交易日，以及欧元、英镑、日元，采用欧洲央行参考汇率。周末与假日缺测向前一个营业日填充。打开或刷新页面时，会额外向公开接口请求一次最新现货报价（与上午定盘分开标注，不是伦敦定盘）；若请求失败，页面仍只显示已存储的定盘序列。事件来自官方公告或公开报道，简介仅说明事件及其与金价的关系，并附来源链接；事件并不穷尽全部影响因素。</p>
       <p>Westmetall 2008 年部分日期混用了下午定盘，故 2008 年改用 SD Bullion 上午定盘以保持口径一致。2009 年之后的西冶金表格中有三处明显刊误（2022-07-20、2024-05-17、2026-01-02），已按同日 SD Bullion 上午定盘更正，详见 <a href="data/prices.json">prices.json</a>。</p>
       <p id="updateLine"></p>
     </footer>
@@ -499,6 +512,9 @@
     let rangeYears = 1;
     let zoomReady = false;
     let currentMinMag = 1;
+    let liveSpot = null;
+    let liveFx = null;
+    let liveStatus = "loading";
 
     const WEEK = "日一二三四五六";
     const fmtMoney = (n, digits) => n.toLocaleString("en-US", {
@@ -539,6 +555,57 @@
     function unitSuffix(code) {
       return CURRENCIES[code || currency].perGram ? "克" : "盎司";
     }
+    function fmtShanghai(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return String(iso || "");
+      const parts = new Intl.DateTimeFormat("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).formatToParts(d);
+      const get = (type) => {
+        const part = parts.find((item) => item.type === type);
+        return part ? part.value : "";
+      };
+      return get("year") + "年" + get("month") + "月" + get("day") + "日 " + get("hour") + ":" + get("minute") + "（亚洲/上海时区）";
+    }
+    function shanghaiDate(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(d);
+    }
+    function lastStoredRate(code) {
+      return rateAt(prices.length - 1, code);
+    }
+    function liveRate(code) {
+      if (code === "USD") return 1;
+      if (liveFx && Number.isFinite(liveFx[code]) && liveFx[code] > 0) return liveFx[code];
+      return lastStoredRate(code);
+    }
+    function toCcyLive(usd, code) {
+      const c = CURRENCIES[code || currency];
+      let v = usd * liveRate(c.code);
+      if (c.perGram) v = v / TROY_OUNCE_GRAMS;
+      return v;
+    }
+    function chartEndValue() {
+      if (liveSpot && Number.isFinite(liveSpot.ts) && liveSpot.ts > Date.parse(last.date + "T00:00:00Z")) {
+        return liveSpot.iso;
+      }
+      return last.date;
+    }
+    function liveIsAfterLastFix() {
+      return !!(liveSpot && Number.isFinite(liveSpot.ts) && liveSpot.ts > Date.parse(last.date + "T00:00:00Z"));
+    }
     function yearsAgo(iso, years) {
       const [y, m, d] = iso.split("-").map(Number);
       return new Date(Date.UTC(y - years, m - 1, d)).toISOString().slice(0, 10);
@@ -560,7 +627,7 @@
         chart.dispatchAction({
           type: "dataZoom",
           startValue: rangeStartDate(years),
-          endValue: last.date
+          endValue: chartEndValue()
         });
       }
     }
@@ -635,16 +702,53 @@
       const hiV = toCcy(hi.date, hi.price);
       const loV = toCcy(lo.date, lo.price);
       const chg = ((lastV / firstV) - 1) * 100;
-      document.getElementById("kpis").innerHTML = [
-        ["最新定价", fmtPrice(lastV), last.date + "（伦敦上午定盘）"],
-        ["区间最高", fmtPrice(hiV), hi.date],
-        ["区间最低", fmtPrice(loV), lo.date],
-        ["二十年间变化", (chg >= 0 ? "+" : "") + chg.toFixed(1) + "%", first.date + " 起"]
-      ].map(([label, value, hint]) =>
-        `<article class="kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></article>`
+      let spotCard;
+      if (liveStatus === "ok" && liveSpot) {
+        const spotV = toCcyLive(liveSpot.usd);
+        spotCard = {
+          cls: "kpi is-spot",
+          label: "最新现货",
+          value: fmtPrice(spotV),
+          valueCls: "value",
+          hint: fmtShanghai(liveSpot.iso) + " · 现货报价，非伦敦上午定盘"
+        };
+      } else if (liveStatus === "loading") {
+        spotCard = {
+          cls: "kpi is-spot",
+          label: "最新现货",
+          value: "获取中…",
+          valueCls: "value is-wait",
+          hint: "打开或刷新时请求一次现货报价，非伦敦上午定盘"
+        };
+      } else {
+        spotCard = {
+          cls: "kpi is-spot",
+          label: "最新现货",
+          value: "—",
+          valueCls: "value is-wait",
+          hint: "现货获取失败，仍显示伦敦上午定盘"
+        };
+      }
+      const cards = [
+        spotCard,
+        { cls: "kpi", label: "最新定价", value: fmtPrice(lastV), valueCls: "value", hint: last.date + "（伦敦上午定盘）" },
+        { cls: "kpi", label: "区间最高", value: fmtPrice(hiV), valueCls: "value", hint: hi.date },
+        { cls: "kpi", label: "区间最低", value: fmtPrice(loV), valueCls: "value", hint: lo.date },
+        { cls: "kpi", label: "二十年间变化", value: (chg >= 0 ? "+" : "") + chg.toFixed(1) + "%", valueCls: "value", hint: first.date + " 起" }
+      ];
+      document.getElementById("kpis").innerHTML = cards.map((card) =>
+        `<article class="${card.cls}"><div class="label">${card.label}</div><div class="${card.valueCls}">${card.value}</div><div class="hint">${card.hint}</div></article>`
       ).join("");
-      document.getElementById("latestNote").textContent =
-        "最新已公布定价：" + last.date + "，" + fmtPrice(lastV) + " / " + unitSuffix() + "。";
+      const fixNote = "伦敦上午定盘：" + last.date + "，" + fmtPrice(lastV) + " / " + unitSuffix() + "。";
+      let liveNote;
+      if (liveStatus === "ok" && liveSpot) {
+        liveNote = "最新现货：" + fmtShanghai(liveSpot.iso) + "，" + fmtPrice(toCcyLive(liveSpot.usd)) + " / " + unitSuffix() + "（非伦敦定盘）。";
+      } else if (liveStatus === "loading") {
+        liveNote = "正在获取最新现货报价…";
+      } else {
+        liveNote = "最新现货获取失败（网络、跨域或本地 file:// 限制），仍显示已存储的伦敦上午定盘。";
+      }
+      document.getElementById("latestNote").textContent = liveNote + " " + fixNote;
     }
     renderKpis();
     document.getElementById("srcLine").innerHTML =
@@ -654,6 +758,8 @@
       "2009–2026 年来自 <a href='https://www.westmetall.com/en/markdaten.php?action=table&amp;field=USD_ozt_London&amp;year=2026' target='_blank' rel='noopener'>Westmetall</a>。" +
       "交叉核对还包括世界黄金协会、英国皇家铸币厂、GoldSilver 与路透社报道。" +
       "人民币汇率来自 <a href='https://fred.stlouisfed.org/series/DEXCHUS' target='_blank' rel='noopener'>美联储 H.10 / FRED DEXCHUS</a>（纽约午盘，截至 2026-11-13 为 6.6710），此后交易日以及欧元、英镑、日元来自 <a href='https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html' target='_blank' rel='noopener'>欧洲央行参考汇率</a>。" +
+      "打开或刷新页面时，会向 <a href='https://gold-api.com' target='_blank' rel='noopener'>Gold-API.com</a> 的 <a href='https://api.gold-api.com/price/XAU' target='_blank' rel='noopener'>/price/XAU</a> 请求一次最新现货（美元/金衡盎司，非伦敦定盘；若该接口不可用，再尝试 <a href='https://xaus.com/api/' target='_blank' rel='noopener'>XAUS</a>）。" +
+      "现货换算汇率优先采用 <a href='https://www.exchangerate-api.com' target='_blank' rel='noopener'>ExchangeRate-API</a> 开放接口 <a href='https://open.er-api.com/v6/latest/USD' target='_blank' rel='noopener'>open.er-api.com</a>，失败时改用本页已存储的最近汇率。" +
       "完整引用见 <a href='data/prices.json'>prices.json</a>、<a href='data/events.json'>events.json</a> 与 <a href='data/fx.json'>fx.json</a>。";
     document.getElementById("updateLine").textContent =
       "页面更新日期：2026年11月20日（亚洲/上海时区）。" + meta.coverage_note;
@@ -718,10 +824,14 @@
       return list.slice(0, 4);
     }
 
-    function tooltipHtml(date, price, hoverEvent) {
+    function tooltipHtml(date, price, hoverEvent, kind) {
       const evs = nearbyEvents(date, hoverEvent);
-      let html = `<div class="tooltip-box"><div class="tt-date">${fmtDate(date)}</div>`;
+      const dateLabel = kind === "spot" && liveSpot ? fmtShanghai(liveSpot.iso) : fmtDate(date);
+      let html = `<div class="tooltip-box"><div class="tt-date">${dateLabel}</div>`;
       html += `<div class="tt-price">${fmtPrice(price)}<span class="tt-unit">/ ${unitSuffix()}</span></div>`;
+      if (kind === "spot") {
+        html += `<div class="tt-empty">最新现货报价（非伦敦上午定盘），来源 ${liveSpot && liveSpot.source ? liveSpot.source : "Gold-API.com"}</div>`;
+      }
       if (!evs.length) {
         html += `<div class="tt-empty">附近两周暂无已收录事件</div></div>`;
         return html;
@@ -762,6 +872,18 @@
     function renderChart() {
       if (!window.echarts || !chart) return;
       const line = prices.map((p) => [p.date, toCcy(p.date, p.price)]);
+      const showLivePoint = liveStatus === "ok" && liveIsAfterLastFix();
+      const liveY = showLivePoint ? toCcyLive(liveSpot.usd) : null;
+      const bridgeData = showLivePoint ? [
+        [last.date, toCcy(last.date, last.price)],
+        [liveSpot.iso, liveY]
+      ] : [];
+      const spotData = showLivePoint ? [{
+        value: [liveSpot.iso, liveY],
+        symbolSize: 11,
+        itemStyle: { color: "#fff4c8", borderColor: "#d4af37", borderWidth: 2, shadowBlur: 10, shadowColor: "rgba(240,215,140,0.45)" },
+        label: { show: true, formatter: "现货", color: "#f0d78c", fontSize: 11, fontWeight: 600, position: "top", distance: 8 }
+      }] : [];
       const zoomBase = {
         xAxisIndex: 0,
         filterMode: "filter",
@@ -831,6 +953,25 @@
             silent: true
           },
           {
+            id: "spot-bridge",
+            name: "现货连线",
+            type: "line",
+            showSymbol: false,
+            lineStyle: { width: 1.8, type: "dashed", color: "#f0d78c" },
+            data: bridgeData,
+            z: 2,
+            silent: true
+          },
+          {
+            id: "spot",
+            name: "最新现货",
+            type: "scatter",
+            data: spotData,
+            z: 4,
+            silent: true,
+            tooltip: { show: false }
+          },
+          {
             id: "events",
             name: "事件",
             type: "scatter",
@@ -843,9 +984,9 @@
       };
       if (!zoomReady) {
         insideZoom.startValue = rangeStartDate();
-        insideZoom.endValue = last.date;
+        insideZoom.endValue = chartEndValue();
         sliderZoom.startValue = rangeStartDate();
-        sliderZoom.endValue = last.date;
+        sliderZoom.endValue = chartEndValue();
         option.dataZoom = [insideZoom, sliderZoom];
       }
       chart.setOption(option, false);
@@ -917,10 +1058,23 @@
         }
         const data = chart.convertFromPixel({ gridIndex: 0 }, [px, py]);
         if (!data) return;
-        const idx = nearestIndex(typeof data[0] === "number" ? data[0] : Date.parse(data[0]));
+        const ts = typeof data[0] === "number" ? data[0] : Date.parse(data[0]);
+        const idx = nearestIndex(ts);
         const p = prices[idx];
-        const yVal = toCcy(p.date, p.price);
-        const pix = chart.convertToPixel({ gridIndex: 0 }, [p.date, yVal]);
+        let kind = "fix";
+        let xKey = p.date;
+        let yVal = toCcy(p.date, p.price);
+        let axisDateLabel = fmtDate(p.date);
+        if (liveIsAfterLastFix()) {
+          const fixTs = Date.parse(p.date + "T00:00:00Z");
+          if (Math.abs(ts - liveSpot.ts) <= Math.abs(ts - fixTs)) {
+            kind = "spot";
+            xKey = liveSpot.iso;
+            yVal = toCcyLive(liveSpot.usd);
+            axisDateLabel = fmtShanghai(liveSpot.iso);
+          }
+        }
+        const pix = chart.convertToPixel({ gridIndex: 0 }, [xKey, yVal]);
         const rect = gridRect();
         if (!pix || !rect) return;
 
@@ -942,7 +1096,7 @@
         dot.style.top = y + "px";
 
         xLabel.style.display = "block";
-        xLabel.textContent = fmtDate(p.date);
+        xLabel.textContent = axisDateLabel;
         xLabel.style.left = "0px";
         xLabel.style.top = (rect.y + rect.height + 6) + "px";
         const xw = xLabel.offsetWidth;
@@ -956,7 +1110,8 @@
         yLabel.style.left = Math.max(4, rect.x - yw - 8) + "px";
 
         tip.style.display = "block";
-        tip.innerHTML = tooltipHtml(p.date, yVal, evHit || pinned).replace(/^<div class="tooltip-box">/, "").replace(/<\/div>$/, "");
+        const tipDate = kind === "spot" ? shanghaiDate(liveSpot.iso) : p.date;
+        tip.innerHTML = tooltipHtml(tipDate, yVal, evHit || pinned, kind).replace(/^<div class="tooltip-box">/, "").replace(/<\/div>$/, "");
         const boxW = tip.offsetWidth, boxH = tip.offsetHeight;
         let bx = x + 16, by = y - 20;
         if (bx + boxW > rect.x + rect.width) bx = x - boxW - 16;
@@ -1125,6 +1280,102 @@
 
     if (window.echarts) mountEcharts();
     else mountFallback();
+
+    const LIVE_GOLD_URL = "https://api.gold-api.com/price/XAU";
+    const LIVE_GOLD_FALLBACK_URL = "https://xaus.com/api/v1/spot?currency=USD&unit=oz";
+    const LIVE_FX_URL = "https://open.er-api.com/v6/latest/USD";
+    const LIVE_TIMEOUT_MS = 8000;
+
+    function fetchJsonOnce(url, timeoutMs) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      return fetch(url, { method: "GET", signal: ctrl.signal, cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .finally(() => clearTimeout(timer));
+    }
+    function parseLiveGold(data) {
+      const price = Number(data && data.price);
+      const iso = data && data.updatedAt;
+      const ts = iso ? Date.parse(iso) : NaN;
+      if (!(price > 0) || !Number.isFinite(ts)) throw new Error("bad gold payload");
+      if (data.currency && data.currency !== "USD") throw new Error("unexpected currency");
+      if (data.symbol && data.symbol !== "XAU") throw new Error("unexpected symbol");
+      return { usd: price, iso: iso, ts: ts, source: "Gold-API.com" };
+    }
+    function ratesFromMap(rates, source, asOf) {
+      if (!rates) return null;
+      const out = { source: source, asOf: asOf || "" };
+      ["CNY", "EUR", "GBP", "JPY"].forEach((code) => {
+        const n = Number(rates[code]);
+        if (n > 0) out[code] = n;
+      });
+      return (out.CNY || out.EUR || out.GBP || out.JPY) ? out : null;
+    }
+    function parseXausGold(data) {
+      const price = Number((data && data.spot_usd_oz) || (data && data.xau && data.xau.price));
+      const iso = (data && (data.price_as_of || data.updated_at)) || "";
+      const ts = Date.parse(iso);
+      if (!(price > 0) || !Number.isFinite(ts)) throw new Error("bad xaus payload");
+      return {
+        usd: price,
+        iso: iso,
+        ts: ts,
+        source: "XAUS.com",
+        fx: ratesFromMap(data.fx_rates, "xaus.com", iso)
+      };
+    }
+    function parseLiveFx(data) {
+      if (!data || data.result !== "success" || !data.rates) throw new Error("bad fx payload");
+      const fx = ratesFromMap(data.rates, "open.er-api.com", data.time_last_update_utc || "");
+      if (!fx) throw new Error("no fx rates");
+      return fx;
+    }
+    function extendZoomToLive() {
+      if (!chart || !liveIsAfterLastFix()) return;
+      try {
+        const dz = ((chart.getOption() || {}).dataZoom || [])[0] || {};
+        const endMs = zoomValueToMs(dz.endValue);
+        const lastMs = Date.parse(last.date + "T00:00:00Z");
+        if (endMs == null || Math.abs(endMs - lastMs) < 3 * 86400000) {
+          chart.dispatchAction({
+            type: "dataZoom",
+            startValue: dz.startValue != null ? dz.startValue : rangeStartDate(),
+            endValue: chartEndValue()
+          });
+        }
+      } catch (err) {}
+    }
+    function applyLiveResult() {
+      renderKpis();
+      if (chart) {
+        renderChart();
+        extendZoomToLive();
+      }
+    }
+    function loadLiveQuote() {
+      const fxPromise = fetchJsonOnce(LIVE_FX_URL, LIVE_TIMEOUT_MS).then(parseLiveFx).catch(() => null);
+      fetchJsonOnce(LIVE_GOLD_URL, LIVE_TIMEOUT_MS)
+        .then(parseLiveGold)
+        .catch(() => fetchJsonOnce(LIVE_GOLD_FALLBACK_URL, LIVE_TIMEOUT_MS).then(parseXausGold))
+        .then((spot) => {
+          liveSpot = spot;
+          return fxPromise.then((fx) => {
+            liveFx = fx || (spot && spot.fx) || null;
+          });
+        })
+        .then(() => {
+          liveStatus = "ok";
+          applyLiveResult();
+        })
+        .catch(() => {
+          liveStatus = "fail";
+          renderKpis();
+        });
+    }
+    loadLiveQuote();
   </script>
 </body>
 </html>
