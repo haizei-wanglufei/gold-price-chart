@@ -112,24 +112,96 @@
       color: var(--muted);
       font-size: 13px;
       margin-right: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
     }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+    .label-cue {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(212, 175, 55, 0.42);
+      background: rgba(212, 175, 55, 0.12);
+      color: var(--gold-bright);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      line-height: 1.4;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
     .chip {
       appearance: none;
-      border: 1px solid transparent;
-      background: var(--bg-soft);
+      -webkit-appearance: none;
+      border: 1px solid color-mix(in srgb, var(--c) 72%, transparent);
+      background: color-mix(in srgb, var(--c) 22%, var(--bg-soft));
       color: var(--text);
       border-radius: 999px;
-      padding: 5px 11px 5px 8px;
+      padding: 5px 10px 5px 8px;
       font: 500 12px/1.2 "Noto Sans SC", sans-serif;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 10%, transparent);
     }
-    .chip:hover { border-color: rgba(212,175,55,0.4); }
-    .chip.is-off { opacity: 0.38; filter: grayscale(0.4); }
+    .chip:hover {
+      background: color-mix(in srgb, var(--c) 32%, var(--bg-soft));
+      border-color: color-mix(in srgb, var(--c) 90%, white);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 22%, transparent);
+    }
+    .chip:focus-visible {
+      outline: 2px solid var(--gold-bright);
+      outline-offset: 2px;
+    }
+    .chip-check {
+      width: 13px;
+      height: 13px;
+      border: 1.5px solid transparent;
+      border-radius: 50%;
+      background: var(--c);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-left: 1px;
+      box-sizing: border-box;
+    }
+    .chip-check::after {
+      content: "";
+      width: 6px;
+      height: 3.5px;
+      border-left: 1.6px solid #0b0a08;
+      border-bottom: 1.6px solid #0b0a08;
+      transform: translateY(-1px) rotate(-45deg);
+    }
+    .chip.is-off {
+      border-color: rgba(154, 142, 120, 0.32);
+      background: rgba(27, 23, 16, 0.55);
+      color: var(--faint);
+      box-shadow: none;
+      opacity: 1;
+      filter: none;
+    }
+    .chip.is-off .dot {
+      opacity: 0.55;
+      filter: grayscale(0.55);
+      box-shadow: none;
+    }
+    .chip.is-off .chip-check {
+      background: transparent;
+      box-shadow: none;
+      border-color: rgba(154, 142, 120, 0.5);
+    }
+    .chip.is-off .chip-check::after { content: none; }
+    .chip.is-off:hover {
+      color: var(--muted);
+      border-color: color-mix(in srgb, var(--c) 45%, rgba(154, 142, 120, 0.4));
+      background: color-mix(in srgb, var(--c) 10%, var(--bg-soft));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 14%, transparent);
+    }
     .dot {
       width: 8px; height: 8px; border-radius: 50%;
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent);
@@ -180,6 +252,12 @@
     .range-select:hover { border-color: rgba(212,175,55,0.45); }
     .range-select:focus { border-color: var(--gold); }
     .range-select option { background: #1b1710; color: #f4ead6; }
+    .zoom-filter-hint {
+      color: var(--faint);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
     #chart { width: 100%; height: 620px; position: relative; }
     #chart .crosshair-v,
     #chart .crosshair-h,
@@ -332,7 +410,7 @@
       <div class="toolbar">
         <div class="toolbar-row">
           <div class="toolbar-group is-grow">
-            <span class="label">事件类型</span>
+            <span class="label">事件类型 <span class="label-cue">可多选</span></span>
             <div class="chips" id="chips"></div>
           </div>
         </div>
@@ -349,13 +427,14 @@
               <option value="10">最近十年</option>
               <option value="20">最近二十年</option>
             </select>
+            <span id="zoomFilterHint" class="zoom-filter-hint" title="按当前窗口跨度过滤事件：十年及以上仅显示重大转折，五至十年显示中等及重大，五年以内显示全部事件">事件：全部事件</span>
           </div>
         </div>
       </div>
       <div id="chart"></div>
       <div id="fallback"><canvas id="fbCanvas"></canvas></div>
       <div class="hint-bar">
-        <span>默认显示最近一年，可用下拉框切换五年、十年或二十年；也可拖动或滚动滚轮缩放。点击类型标签可显示或隐藏该类事件。</span>
+        <span>默认显示最近一年，可用下拉框切换五年、十年或二十年；也可拖动或滚动滚轮缩放。事件会随当前窗口跨度过滤，拉远时只保留影响更大的新闻。点击类型标签可多选显示或隐藏该类事件，至少保留一类。</span>
         <span id="latestNote"></span>
       </div>
     </section>
@@ -419,6 +498,7 @@
     let currency = "CNY";
     let rangeYears = 1;
     let zoomReady = false;
+    let currentMinMag = 1;
 
     const WEEK = "日一二三四五六";
     const fmtMoney = (n, digits) => n.toLocaleString("en-US", {
@@ -484,6 +564,60 @@
         });
       }
     }
+    const SPAN_SLACK_MS = 20 * 86400000;
+    const ZOOM_FILTER_LABEL = { 1: "全部事件", 2: "中等及重大", 3: "仅重大转折" };
+    function minMagnitudeForYears(years) {
+      if (years >= 10) return 3;
+      if (years >= 5) return 2;
+      return 1;
+    }
+    function minMagnitudeForDateSpan(startDate, endDate) {
+      const startMs = Date.parse(startDate + "T00:00:00Z");
+      const endMs = Date.parse(endDate + "T00:00:00Z");
+      const years = (endMs - startMs + SPAN_SLACK_MS) / (365.25 * 86400000);
+      return minMagnitudeForYears(years);
+    }
+    function zoomValueToMs(v) {
+      if (v == null || v === "") return null;
+      if (typeof v === "number" && Number.isFinite(v)) return v;
+      const ms = Date.parse(v);
+      return Number.isFinite(ms) ? ms : null;
+    }
+    function readZoomSpanYears() {
+      if (chart) {
+        const dz = ((chart.getOption() || {}).dataZoom || [])[0] || {};
+        const startMs = zoomValueToMs(dz.startValue);
+        const endMs = zoomValueToMs(dz.endValue);
+        if (startMs != null && endMs != null && endMs > startMs) {
+          return (endMs - startMs + SPAN_SLACK_MS) / (365.25 * 86400000);
+        }
+        const startPct = Number(dz.start);
+        const endPct = Number(dz.end);
+        if (Number.isFinite(startPct) && Number.isFinite(endPct)) {
+          const t0 = Date.parse(prices[0].date + "T00:00:00Z");
+          const t1 = Date.parse(last.date + "T00:00:00Z");
+          return ((t1 - t0) * (endPct - startPct) / 100 + SPAN_SLACK_MS) / (365.25 * 86400000);
+        }
+      }
+      return (Date.parse(last.date + "T00:00:00Z") - Date.parse(rangeStartDate() + "T00:00:00Z") + SPAN_SLACK_MS) / (365.25 * 86400000);
+    }
+    function eventIsShown(ev) {
+      return activeTypes.has(ev.type) && ev.magnitude >= currentMinMag;
+    }
+    function updateZoomHint() {
+      const el = document.getElementById("zoomFilterHint");
+      if (el) el.textContent = "事件：" + ZOOM_FILTER_LABEL[currentMinMag];
+    }
+    function updateEventFilter(opts) {
+      const next = minMagnitudeForYears(readZoomSpanYears());
+      const changed = next !== currentMinMag;
+      currentMinMag = next;
+      updateZoomHint();
+      if (changed && chart && !(opts && opts.updateSeries === false)) {
+        chart.setOption({ series: [{ id: "events", data: scatterData() }] });
+      }
+      return changed;
+    }
     function yNiceMin(v) {
       const span = Math.max(1, v.max - v.min);
       const step = span >= 200000 ? 20000 : span >= 50000 ? 5000 : span >= 10000 ? 1000 : span >= 2000 ? 100 : span >= 400 ? 50 : 10;
@@ -532,12 +666,17 @@
       chip.type = "button";
       chip.className = "chip";
       chip.dataset.type = type;
-      chip.innerHTML = `<i class="dot" style="--c:${color}"></i>${type}`;
+      chip.style.setProperty("--c", color);
+      chip.setAttribute("aria-pressed", "true");
+      chip.setAttribute("title", "可多选：点击开或关此类事件");
+      chip.innerHTML = `<i class="dot"></i>${type}<span class="chip-check" aria-hidden="true"></span>`;
       chip.addEventListener("click", () => {
         if (activeTypes.has(type) && activeTypes.size === 1) return;
         if (activeTypes.has(type)) activeTypes.delete(type);
         else activeTypes.add(type);
-        chip.classList.toggle("is-off", !activeTypes.has(type));
+        const on = activeTypes.has(type);
+        chip.classList.toggle("is-off", !on);
+        chip.setAttribute("aria-pressed", on ? "true" : "false");
         renderChart();
       });
       chips.appendChild(chip);
@@ -566,8 +705,8 @@
     }
 
     function nearbyEvents(date, hoverEvent) {
-      const list = events.filter((ev) => activeTypes.has(ev.type) && dayDiff(ev.date, date) <= 14);
-      if (hoverEvent && !list.some((ev) => ev.date === hoverEvent.date && ev.title === hoverEvent.title)) {
+      const list = events.filter((ev) => eventIsShown(ev) && dayDiff(ev.date, date) <= 14);
+      if (hoverEvent && eventIsShown(hoverEvent) && !list.some((ev) => ev.date === hoverEvent.date && ev.title === hoverEvent.title)) {
         list.unshift(hoverEvent);
       }
       list.sort((a, b) => {
@@ -606,7 +745,7 @@
 
     let chart;
     function scatterData() {
-      return events.filter((ev) => activeTypes.has(ev.type)).map((ev) => ({
+      return events.filter((ev) => eventIsShown(ev)).map((ev) => ({
         value: [ev.price_date, toCcy(ev.price_date, ev.price)],
         event: ev,
         symbolSize: MAG_SIZE[ev.magnitude],
@@ -672,7 +811,6 @@
           splitLine: { lineStyle: { color: "rgba(212,175,55,0.08)" } },
           axisPointer: { show: false }
         },
-        dataZoom: [insideZoom, sliderZoom],
         series: [
           {
             id: "price",
@@ -861,7 +999,9 @@
       const el = document.getElementById("chart");
       chart = echarts.init(el, null, { renderer: "canvas" });
       renderChart();
+      updateEventFilter({ updateSeries: false });
       bindCustomPointer(el);
+      chart.on("datazoom", () => updateEventFilter());
       window.addEventListener("resize", () => chart && chart.resize());
       document.getElementById("rangeSelect").addEventListener("change", (e) => {
         applyRange(Number(e.target.value));
@@ -909,7 +1049,9 @@
         ctx.strokeStyle = "#e3c56a";
         ctx.lineWidth = 2;
         ctx.stroke();
-        const evs = events.filter((ev) => activeTypes.has(ev.type));
+        currentMinMag = minMagnitudeForDateSpan(prices[visible.start].date, prices[visible.end].date);
+        updateZoomHint();
+        const evs = events.filter((ev) => eventIsShown(ev));
         evs.forEach((ev) => {
           const i = prices.findIndex((p) => p.date === ev.price_date);
           if (i < visible.start || i > visible.end) return;
