@@ -1,4 +1,4 @@
-![Uploading image.png…]()
+<img width="2559" height="1229" alt="0302d249-7bb5-41fb-9bf7-035f885c4791" src="https://github.com/user-attachments/assets/9e093e3b-2337-4eb3-b2e9-753771ae233f" />
 
 主要功能如下：
 
