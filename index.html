@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>黄金价格走势 · 近二十年</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -30,18 +30,33 @@
       --卫生: #e06c9f;
     }
     * { box-sizing: border-box; }
+    html {
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
     html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
     body {
       font-family: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
       min-height: 100vh;
+      min-height: 100dvh;
       line-height: 1.65;
+      overflow-x: hidden;
+      overflow-wrap: break-word;
       background:
         radial-gradient(1200px 600px at 12% -10%, rgba(212, 175, 55, 0.14), transparent 55%),
         radial-gradient(900px 500px at 100% 0%, rgba(120, 80, 20, 0.16), transparent 50%),
         radial-gradient(800px 400px at 50% 120%, rgba(212, 175, 55, 0.07), transparent 50%),
         var(--bg);
     }
-    .wrap { width: min(1240px, calc(100% - 40px)); margin: 0 auto; padding: 36px 0 64px; }
+    button, select { touch-action: manipulation; }
+    .wrap {
+      width: min(1240px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 64px;
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      padding-bottom: max(64px, calc(32px + env(safe-area-inset-bottom, 0px)));
+    }
     header { margin-bottom: 28px; }
     .kicker {
       font-size: 12px;
@@ -68,7 +83,7 @@
     }
     .kpis {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 14px;
       margin: 28px 0 22px;
     }
@@ -78,6 +93,7 @@
       border-radius: 16px;
       padding: 16px 18px 15px;
       box-shadow: var(--shadow);
+      min-width: 0;
     }
     .kpi.is-spot {
       border-color: rgba(240, 215, 140, 0.42);
@@ -90,6 +106,7 @@
       color: var(--gold-bright);
       margin-top: 4px;
       letter-spacing: 0.02em;
+      overflow-wrap: anywhere;
     }
     .kpi .value.is-wait {
       color: var(--muted);
@@ -97,7 +114,7 @@
       font-family: "Noto Sans SC", sans-serif;
       font-weight: 500;
     }
-    .kpi .hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .kpi .hint { color: var(--muted); font-size: 12px; margin-top: 2px; overflow-wrap: break-word; }
     .panel {
       background: var(--card);
       border: 1px solid var(--line);
@@ -268,7 +285,104 @@
       letter-spacing: 0.04em;
       white-space: nowrap;
     }
-    #chart { width: 100%; height: 620px; position: relative; }
+    .chart-shell {
+      position: relative;
+      width: 100%;
+    }
+    #chart, #fallback {
+      width: 100%;
+      height: 620px;
+      position: relative;
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+      overflow: hidden;
+    }
+    .chart-expand {
+      display: none;
+      position: absolute;
+      right: max(6px, env(safe-area-inset-right, 0px));
+      bottom: var(--slider-stack, 56px);
+      z-index: 20;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 1px solid rgba(212, 175, 55, 0.42);
+      border-radius: 10px;
+      background: rgba(18, 15, 10, 0.88);
+      color: var(--gold-bright);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .chart-expand:hover,
+    .chart-expand:focus-visible {
+      border-color: var(--gold);
+      background: rgba(30, 24, 14, 0.96);
+      outline: none;
+    }
+    .chart-expand svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .chart-expand .icon-collapse { display: none; }
+    .chart-shell.is-fs .chart-expand .icon-expand { display: none; }
+    .chart-shell.is-fs .chart-expand .icon-collapse { display: block; }
+    body.chart-fs-on,
+    html.chart-fs-on {
+      overflow: hidden;
+    }
+    .chart-shell.is-fs {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      width: 100dvw;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 10000;
+      background: var(--bg);
+      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      border-radius: 0;
+    }
+    .chart-shell.is-fs #chart,
+    .chart-shell.is-fs #fallback {
+      flex: 1 1 auto;
+      height: 100% !important;
+      min-height: 0;
+    }
+    .chart-shell.is-fs.is-rotated {
+      top: 0;
+      left: 100vw;
+      left: 100dvw;
+      inset: auto;
+      top: 0;
+      left: 100vw;
+      left: 100dvw;
+      right: auto;
+      bottom: auto;
+      width: 100vh;
+      width: 100dvh;
+      height: 100vw;
+      height: 100dvw;
+      max-width: none;
+      max-height: none;
+      transform: rotate(90deg);
+      transform-origin: top left;
+      padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px) env(safe-area-inset-top, 0px);
+    }
+    .chart-shell.is-fs .chart-expand {
+      display: flex;
+      right: max(8px, env(safe-area-inset-right, 0px));
+    }
     #chart .crosshair-v,
     #chart .crosshair-h,
     #chart .crosshair-dot,
@@ -315,11 +429,10 @@
       padding: 12px 14px;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
       backdrop-filter: blur(8px);
+      max-width: calc(100% - 12px);
     }
     #fallback {
       display: none;
-      height: 620px;
-      position: relative;
     }
     #fallback canvas { width: 100%; height: 100%; display: block; }
     .hint-bar {
@@ -330,6 +443,7 @@
       font-size: 12px;
       padding: 4px 8px 10px;
     }
+    .hint-bar span { min-width: 0; }
     .legends {
       display: grid;
       grid-template-columns: 1.4fr 1fr;
@@ -372,8 +486,8 @@
     }
     footer a { color: #c8b27a; text-decoration: none; border-bottom: 1px solid rgba(200,178,122,0.35); }
     footer a:hover { color: var(--gold-bright); }
-    footer p { margin: 0 0 8px; max-width: 92em; }
-    .tooltip-box { min-width: 240px; max-width: 360px; }
+    footer p { margin: 0 0 8px; max-width: 92em; overflow-wrap: break-word; }
+    .tooltip-box { min-width: 0; max-width: min(360px, 100%); }
     .tt-date { color: #cfc3a8; font-size: 12px; letter-spacing: 0.06em; }
     .tt-price {
       font-family: "Noto Serif SC", serif;
@@ -397,15 +511,153 @@
     @media (max-width: 1180px) {
       .kpi .value { font-size: 22px; }
     }
-    @media (max-width: 980px) {
-      .kpis, .legends { grid-template-columns: 1fr 1fr; }
-      #chart, #fallback { height: 520px; }
+    @media (max-width: 1100px) {
+      .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-    @media (max-width: 640px) {
-      .wrap { width: calc(100% - 24px); padding-top: 22px; }
-      .kpis, .legends { grid-template-columns: 1fr; }
-      #chart, #fallback { height: 460px; }
-      h1 { font-size: 34px; }
+    @media (max-width: 980px) {
+      .legends { grid-template-columns: 1fr 1fr; }
+      #chart, #fallback {
+        height: clamp(380px, 60vh, 560px);
+        height: clamp(380px, 60dvh, 560px);
+      }
+    }
+    @media (max-width: 700px), (max-height: 500px) {
+      .chart-expand { display: flex; }
+      .kicker { font-size: 10px; letter-spacing: 0.14em; }
+      .subtitle { font-size: 12px; }
+      .kpi .label { font-size: 10px; letter-spacing: 0.06em; }
+      .kpi .value { font-size: clamp(14px, 4.4vw, 16px); }
+      .kpi .value.is-wait { font-size: 13px; }
+      .kpi .hint { font-size: 10px; }
+      .toolbar { padding: 0 0 8px; gap: 6px; }
+      .toolbar .label { font-size: 11px; }
+      .toolbar-row { gap: 6px 10px; }
+      .label-cue { font-size: 9px; padding: 0 5px; letter-spacing: 0.04em; }
+      .chips { gap: 5px; }
+      .chip {
+        min-height: 32px;
+        padding: 4px 8px 4px 6px;
+        font-size: 11px;
+        gap: 4px;
+      }
+      .chip-check { width: 12px; height: 12px; }
+      .chip-check::after { width: 5px; height: 3px; }
+      .dot { width: 6px; height: 6px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 25%, transparent); }
+      .ccy-switch { gap: 4px; }
+      .ccy-btn, .range-select, .btn {
+        min-height: 32px;
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+      .range-select {
+        padding: 4px 26px 4px 10px;
+        background-position: right 8px center;
+      }
+      .zoom-filter-hint { font-size: 11px; white-space: normal; line-height: 1.4; }
+      .hint-bar { font-size: 11px; }
+      .legend-card { padding: 10px; }
+      .legend-card h2 { font-size: 11px; }
+      .legend-item { font-size: 11px; }
+      footer { font-size: 11px; }
+      footer h2 { font-size: 11px; }
+      #chart .gold-tip { padding: 8px 10px; border-radius: 12px; }
+      .tt-date, .tt-unit, .tt-empty { font-size: 11px; }
+      .tt-price { font-size: 16px; margin-bottom: 8px; }
+      #chart .crosshair-label { font-size: 10px; padding: 2px 5px; }
+    }
+    @media (max-width: 700px) {
+      .wrap {
+        width: 100%;
+        padding: 12px max(10px, env(safe-area-inset-left, 0px)) max(22px, calc(14px + env(safe-area-inset-bottom, 0px))) max(10px, env(safe-area-inset-right, 0px));
+      }
+      header { margin-bottom: 12px; }
+      h1 {
+        font-size: clamp(22px, 6.5vw, 28px);
+        letter-spacing: 0.04em;
+        margin-bottom: 6px;
+      }
+      .kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin: 12px 0 10px;
+      }
+      .kpi { padding: 8px 9px 7px; border-radius: 10px; }
+      .kpi .hint {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .panel {
+        padding: 8px 0 6px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+        margin-left: calc(-1 * max(10px, env(safe-area-inset-left, 0px)));
+        margin-right: calc(-1 * max(10px, env(safe-area-inset-right, 0px)));
+      }
+      .toolbar {
+        padding-left: max(10px, env(safe-area-inset-left, 0px));
+        padding-right: max(10px, env(safe-area-inset-right, 0px));
+      }
+      .toolbar-group.is-grow {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+      }
+      .chips { width: 100%; }
+      .chart-shell {
+        width: 100%;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+      }
+      .hint-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 2px max(10px, env(safe-area-inset-right, 0px)) 6px max(10px, env(safe-area-inset-left, 0px));
+      }
+      #chart, #fallback {
+        height: clamp(320px, 56vh, 460px);
+        height: clamp(320px, 56dvh, 460px);
+      }
+      .legends { grid-template-columns: 1fr; gap: 8px; }
+      footer { margin-top: 18px; padding-top: 14px; }
+      footer p { margin-bottom: 8px; }
+    }
+    @media (max-width: 700px) and (orientation: landscape), (max-height: 500px) {
+      .wrap { padding-top: 8px; padding-bottom: max(12px, calc(8px + env(safe-area-inset-bottom, 0px))); }
+      header { margin-bottom: 6px; }
+      .kicker { margin: 0 0 3px; }
+      h1 { font-size: 18px; margin-bottom: 3px; }
+      .subtitle {
+        font-size: 11px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .kpis { margin: 6px 0; gap: 6px; }
+      .kpi { padding: 6px 8px; }
+      .kpi .value { font-size: 14px; }
+      .kpi .hint {
+        font-size: 9px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .toolbar { padding: 0 0 5px; gap: 5px; }
+      .chip, .ccy-btn, .range-select, .btn { min-height: 30px; }
+      #chart, #fallback {
+        height: clamp(240px, 70vh, 400px);
+        height: clamp(240px, 70dvh, 400px);
+      }
+    }
+    @media (max-height: 500px) and (min-width: 700px) {
+      .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -414,7 +666,7 @@
     <header>
       <p class="kicker">伦敦黄金上午定盘 · 2006.11–2026.11</p>
       <h1>黄金价格走势</h1>
-      <p class="subtitle">把近二十年影响黄金走势的重大事件插入图中。将鼠标移到曲线上的某个点或事件标记，可查看当日价格，以及附近事件的简介；简介颜色按事件类型区分，字号与徽章按影响大小变化。</p>
+      <p class="subtitle">把近二十年影响黄金走势的重大事件插入图中。将鼠标移到或点按曲线上的某个点或事件标记，可查看当日价格，以及附近事件的简介；简介颜色按事件类型区分，字号与徽章按影响大小变化。</p>
     </header>
 
     <section class="kpis" id="kpis"></section>
@@ -444,10 +696,20 @@
           </div>
         </div>
       </div>
-      <div id="chart"></div>
-      <div id="fallback"><canvas id="fbCanvas"></canvas></div>
+      <div class="chart-shell" id="chartShell">
+        <div id="chart"></div>
+        <div id="fallback"><canvas id="fbCanvas"></canvas></div>
+        <button type="button" id="chartExpand" class="chart-expand" aria-label="横向全屏" title="横向全屏">
+          <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 4H4v5M15 4h5v5M4 15v5h5M20 15v5h-5"/>
+          </svg>
+          <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18"/>
+          </svg>
+        </button>
+      </div>
       <div class="hint-bar">
-        <span>默认显示最近一年，可用下拉框切换五年、十年或二十年；也可拖动或滚动滚轮缩放。事件会随当前窗口跨度过滤，拉远时只保留影响更大的新闻。点击类型标签可多选显示或隐藏该类事件，至少保留一类。</span>
+        <span>默认显示最近一年，可用下拉框切换五年、十年或二十年；也可拖动、双指缩放或滚动滚轮缩放。事件会随当前窗口跨度过滤，拉远时只保留影响更大的新闻。点击类型标签可多选显示或隐藏该类事件，至少保留一类。手机上按住曲线或事件圆点可查看详情，手指离开后关闭。右下角按钮可将折线图横向全屏。</span>
         <span id="latestNote"></span>
       </div>
     </section>
@@ -690,6 +952,44 @@
       const step = span >= 200000 ? 20000 : span >= 50000 ? 5000 : span >= 10000 ? 1000 : span >= 2000 ? 100 : span >= 400 ? 50 : 10;
       return Math.max(0, Math.floor((v.min * 0.9) / step) * step);
     }
+    function isChartFullscreen() {
+      return document.body.classList.contains("chart-fs-on");
+    }
+    function isCompactView() {
+      return isChartFullscreen() || window.matchMedia("(max-width: 700px)").matches;
+    }
+    function isShortView() {
+      return isChartFullscreen() || window.matchMedia("(max-height: 500px)").matches;
+    }
+    function chartChrome() {
+      const compact = isCompactView();
+      const short = isShortView();
+      const fs = isChartFullscreen();
+      return {
+        grid: {
+          left: compact ? (currency === "JPY" ? 64 : 52) : (currency === "JPY" ? 86 : 72),
+          right: compact ? 22 : 28,
+          top: fs ? 14 : ((compact || short) ? 24 : 36),
+          bottom: fs ? (compact ? 62 : 54) : (compact ? 100 : 86)
+        },
+        sliderHeight: fs ? 22 : (compact ? 28 : 22),
+        sliderBottom: fs ? 10 : (compact ? 20 : 28),
+        axisFont: compact ? 10 : 11
+      };
+    }
+    function applyChartChrome() {
+      const chrome = chartChrome();
+      const shell = document.getElementById("chartShell");
+      if (shell) {
+        shell.style.setProperty("--slider-stack", (chrome.sliderBottom + chrome.sliderHeight + 8) + "px");
+      }
+      if (!chart) return;
+      chart.setOption({
+        grid: chrome.grid,
+        xAxis: { axisLabel: { fontSize: chrome.axisFont } },
+        dataZoom: [{}, { height: chrome.sliderHeight, bottom: chrome.sliderBottom }]
+      });
+    }
 
     const first = prices[0];
     const last = prices[prices.length - 1];
@@ -892,10 +1192,11 @@
         moveOnMouseWheel: false
       };
       const insideZoom = Object.assign({ type: "inside" }, zoomBase);
+      const chrome = chartChrome();
       const sliderZoom = Object.assign({
         type: "slider",
-        height: 22,
-        bottom: 28,
+        height: chrome.sliderHeight,
+        bottom: chrome.sliderBottom,
         borderColor: "transparent",
         backgroundColor: "rgba(255,255,255,0.03)",
         fillerColor: "rgba(212,175,55,0.18)",
@@ -911,11 +1212,11 @@
         animationDurationUpdate: 0,
         tooltip: { show: false },
         axisPointer: { show: false },
-        grid: { left: currency === "JPY" ? 86 : 72, right: 28, top: 36, bottom: 86 },
+        grid: chrome.grid,
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: "rgba(212,175,55,0.35)" } },
-          axisLabel: { color: "#9a8e78", fontSize: 11, hideOverlap: true },
+          axisLabel: { color: "#9a8e78", fontSize: chrome.axisFont, hideOverlap: true },
           splitLine: { show: false },
           axisPointer: { show: false }
         },
@@ -993,6 +1294,27 @@
       zoomReady = true;
     }
 
+    let hideChartPointer = function () {};
+    let layoutFallback = function () {};
+
+    function eventToLocal(el, clientX, clientY) {
+      const rect = el.getBoundingClientRect();
+      const shell = document.getElementById("chartShell");
+      if (shell && shell.classList.contains("is-rotated")) {
+        const w = Math.max(1, el.clientWidth);
+        const h = Math.max(1, el.clientHeight);
+        return {
+          x: (clientY - rect.top) / Math.max(1, rect.height) * w,
+          y: (rect.right - clientX) / Math.max(1, rect.width) * h
+        };
+      }
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+    function clientOutside(el, clientX, clientY) {
+      const rect = el.getBoundingClientRect();
+      return clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom;
+    }
+
     function bindCustomPointer(el) {
       const vLine = document.createElement("div");
       const hLine = document.createElement("div");
@@ -1036,7 +1358,7 @@
           const pix = chart.convertToPixel({ gridIndex: 0 }, item.value);
           if (!pix) return;
           const d = Math.hypot(pix[0] - px, pix[1] - py);
-          const thresh = item.symbolSize / 2 + 8;
+          const thresh = item.symbolSize / 2 + (isCoarsePointer() ? 18 : 8);
           if (d <= thresh && d < bestD) {
             bestD = d;
             best = item.event;
@@ -1046,9 +1368,72 @@
       }
 
       let pinned = null;
+      let sticky = false;
+      let panTouch = false;
+      let coarseTouch = false;
+      let touchStart = null;
+      let ignoreClickUntil = 0;
+      let touchActive = false;
+
+      function isCoarsePointer() {
+        return coarseTouch || window.matchMedia("(pointer: coarse)").matches;
+      }
+      function ignoreMouseFromTouch() {
+        return touchActive || performance.now() < ignoreClickUntil;
+      }
 
       function hidePointer() {
         [vLine, hLine, dot, xLabel, yLabel, tip].forEach((n) => { n.style.display = "none"; });
+      }
+
+      hideChartPointer = function () {
+        sticky = false;
+        pinned = null;
+        hidePointer();
+      };
+
+      function clamp(n, min, max) {
+        return Math.max(min, Math.min(max, n));
+      }
+
+      function clampBox(preferred, size, elMin, elMax, viewMin, viewMax) {
+        const min = Math.max(elMin, viewMin);
+        const max = Math.min(elMax - size, viewMax - size);
+        if (min <= max) return clamp(preferred, min, max);
+        const vMin = viewMin;
+        const vMax = viewMax - size;
+        if (vMin <= vMax) return clamp(preferred, vMin, vMax);
+        return clamp(preferred, elMin, elMax - size);
+      }
+
+      function viewBounds() {
+        const shell = document.getElementById("chartShell");
+        if (shell && shell.classList.contains("is-rotated")) {
+          const pad = 8;
+          return {
+            left: pad,
+            top: pad,
+            right: el.clientWidth - pad,
+            bottom: el.clientHeight - pad,
+            elW: el.clientWidth,
+            elH: el.clientHeight
+          };
+        }
+        const elRect = el.getBoundingClientRect();
+        const vv = window.visualViewport;
+        const left = vv ? vv.offsetLeft : 0;
+        const top = vv ? vv.offsetTop : 0;
+        const width = vv ? vv.width : window.innerWidth;
+        const height = vv ? vv.height : window.innerHeight;
+        const pad = 8;
+        return {
+          left: pad + left - elRect.left,
+          top: pad + top - elRect.top,
+          right: left + width - pad - elRect.left,
+          bottom: top + height - pad - elRect.top,
+          elW: el.clientWidth,
+          elH: el.clientHeight
+        };
       }
 
       function showAt(px, py, evOverride) {
@@ -1095,53 +1480,135 @@
         dot.style.left = x + "px";
         dot.style.top = y + "px";
 
+        let axisLabelText = axisDateLabel;
+        if (isCompactView()) {
+          if (kind === "spot") axisLabelText = fmtShanghai(liveSpot.iso).replace("（亚洲/上海时区）", "");
+          else {
+            const parts = p.date.split("-");
+            axisLabelText = parts[0] + "年" + Number(parts[1]) + "月" + Number(parts[2]) + "日";
+          }
+        }
+
+        const view = viewBounds();
+        const gutter = 6;
+
         xLabel.style.display = "block";
-        xLabel.textContent = axisDateLabel;
+        xLabel.textContent = axisLabelText;
         xLabel.style.left = "0px";
-        xLabel.style.top = (rect.y + rect.height + 6) + "px";
+        let xlTop = rect.y + rect.height + 6;
+        if (xlTop + 20 > view.elH - gutter) xlTop = rect.y + rect.height - 22;
+        xLabel.style.top = xlTop + "px";
         const xw = xLabel.offsetWidth;
-        xLabel.style.left = Math.max(rect.x, Math.min(x - xw / 2, rect.x + rect.width - xw)) + "px";
+        xLabel.style.left = clampBox(x - xw / 2, xw, gutter, view.elW - gutter, view.left, view.right) + "px";
 
         yLabel.style.display = "block";
         yLabel.textContent = fmtPrice(yVal);
-        yLabel.style.top = (y - 10) + "px";
+        yLabel.style.top = clamp(y - 10, gutter, view.elH - 20) + "px";
         yLabel.style.left = "0px";
         const yw = yLabel.offsetWidth;
-        yLabel.style.left = Math.max(4, rect.x - yw - 8) + "px";
+        let ylLeft = rect.x - yw - 8;
+        if (ylLeft < gutter) ylLeft = rect.x + 4;
+        yLabel.style.left = clampBox(ylLeft, yw, gutter, view.elW - gutter, view.left, view.right) + "px";
 
         tip.style.display = "block";
         const tipDate = kind === "spot" ? shanghaiDate(liveSpot.iso) : p.date;
         tip.innerHTML = tooltipHtml(tipDate, yVal, evHit || pinned, kind).replace(/^<div class="tooltip-box">/, "").replace(/<\/div>$/, "");
         const boxW = tip.offsetWidth, boxH = tip.offsetHeight;
         let bx = x + 16, by = y - 20;
-        if (bx + boxW > rect.x + rect.width) bx = x - boxW - 16;
-        if (by + boxH > rect.y + rect.height) by = rect.y + rect.height - boxH;
-        if (by < rect.y) by = rect.y;
-        if (bx < rect.x) bx = rect.x;
+        if (bx + boxW > view.elW - gutter) bx = x - boxW - 16;
+        if (by + boxH > view.elH - gutter) by = y - boxH - 16;
+        bx = clampBox(bx, boxW, gutter, view.elW - gutter, view.left, view.right);
+        by = clampBox(by, boxH, gutter, view.elH - gutter, view.top, view.bottom);
         tip.style.left = bx + "px";
         tip.style.top = by + "px";
       }
 
       const zr = chart.getZr();
       zr.on("mousemove", (e) => {
+        if (panTouch || ignoreMouseFromTouch()) return;
         if (e.event && e.event.buttons) return;
         showAt(e.offsetX, e.offsetY, pinned);
       });
       zr.on("globalout", () => {
+        if (sticky || ignoreMouseFromTouch()) return;
         pinned = null;
         hidePointer();
       });
       el.addEventListener("mouseleave", () => {
+        if (sticky || ignoreMouseFromTouch()) return;
         pinned = null;
         hidePointer();
       });
       zr.on("click", (e) => {
+        if (panTouch) return;
+        if (performance.now() < ignoreClickUntil) return;
         if (!chart.containPixel("grid", [e.offsetX, e.offsetY])) return;
         const ev = hitEvent(e.offsetX, e.offsetY);
         pinned = ev || null;
+        sticky = isCoarsePointer();
         showAt(e.offsetX, e.offsetY, ev || null);
       });
+      el.addEventListener("touchstart", (e) => {
+        coarseTouch = true;
+        touchActive = true;
+        panTouch = e.touches && e.touches.length > 1;
+        const t = e.touches && e.touches[0];
+        touchStart = t ? { x: t.clientX, y: t.clientY } : null;
+        if (panTouch) {
+          hideChartPointer();
+          return;
+        }
+        if (t && !clientOutside(el, t.clientX, t.clientY)) {
+          const pt = eventToLocal(el, t.clientX, t.clientY);
+          showAt(pt.x, pt.y);
+        }
+      }, { passive: true });
+      el.addEventListener("touchmove", (e) => {
+        if (!e.touches || !e.touches[0]) return;
+        if (e.touches.length > 1) {
+          panTouch = true;
+          hideChartPointer();
+          return;
+        }
+        const t = e.touches[0];
+        if (clientOutside(el, t.clientX, t.clientY)) {
+          hideChartPointer();
+          return;
+        }
+        if (touchStart) {
+          const dx = t.clientX - touchStart.x;
+          const dy = t.clientY - touchStart.y;
+          if (Math.hypot(dx, dy) > 12) {
+            panTouch = true;
+            hideChartPointer();
+            return;
+          }
+        }
+        const pt = eventToLocal(el, t.clientX, t.clientY);
+        showAt(pt.x, pt.y);
+      }, { passive: true });
+      function endTouchPointer(e) {
+        if (e.touches && e.touches.length > 0) {
+          if (e.touches.length > 1) {
+            panTouch = true;
+            hideChartPointer();
+          }
+          return;
+        }
+        touchActive = false;
+        hideChartPointer();
+        ignoreClickUntil = performance.now() + 700;
+        setTimeout(() => { panTouch = false; touchStart = null; }, 0);
+      }
+      el.addEventListener("touchend", endTouchPointer, { passive: true });
+      el.addEventListener("touchcancel", endTouchPointer, { passive: true });
+      document.addEventListener("pointerdown", (e) => {
+        if (!sticky) return;
+        if (el.contains(e.target)) return;
+        hideChartPointer();
+      });
       chart.on("click", { seriesId: "events" }, (params) => {
+        if (performance.now() < ignoreClickUntil) return;
         const ev = params.data && params.data.event;
         if (!ev) return;
         pinned = ev;
@@ -1156,8 +1623,15 @@
       renderChart();
       updateEventFilter({ updateSeries: false });
       bindCustomPointer(el);
+      applyChartChrome();
       chart.on("datazoom", () => updateEventFilter());
-      window.addEventListener("resize", () => chart && chart.resize());
+      const onViewportChange = () => {
+        if (!chart) return;
+        applyChartChrome();
+        chart.resize();
+      };
+      window.addEventListener("resize", onViewportChange);
+      window.addEventListener("orientationchange", onViewportChange);
       document.getElementById("rangeSelect").addEventListener("change", (e) => {
         applyRange(Number(e.target.value));
       });
@@ -1233,7 +1707,7 @@
           ctx.fillStyle = "#f0d78c";
           ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
           hover = p;
-          const boxW = 320, boxH = 160;
+          const boxW = Math.min(320, Math.max(160, w - 16)), boxH = 160;
           let bx = Math.min(w - boxW - 8, Math.max(8, x + 16));
           let by = Math.min(h - boxH - 8, Math.max(8, y - 20));
           ctx.fillStyle = "rgba(18,15,10,0.94)";
@@ -1264,11 +1738,35 @@
 
       let rect = layout();
       draw(rect);
-      canvas.addEventListener("mousemove", (e) => {
+      function pointerPos(e) {
         const r = canvas.getBoundingClientRect();
-        draw(rect, e.clientX - r.left, e.clientY - r.top);
+        const pt = e.touches && e.touches[0] ? e.touches[0] : e;
+        return [pt.clientX - r.left, pt.clientY - r.top];
+      }
+      canvas.addEventListener("mousemove", (e) => {
+        const pos = pointerPos(e);
+        draw(rect, pos[0], pos[1]);
       });
+      canvas.addEventListener("touchstart", (e) => {
+        const t = e.touches && e.touches[0];
+        if (t && clientOutside(canvas, t.clientX, t.clientY)) return;
+        const pos = pointerPos(e);
+        draw(rect, pos[0], pos[1]);
+      }, { passive: true });
+      canvas.addEventListener("touchmove", (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t || clientOutside(canvas, t.clientX, t.clientY)) {
+          hover = null;
+          draw(rect);
+          return;
+        }
+        const pos = pointerPos(e);
+        draw(rect, pos[0], pos[1]);
+      }, { passive: true });
+      canvas.addEventListener("touchend", () => { hover = null; draw(rect); }, { passive: true });
+      canvas.addEventListener("touchcancel", () => { hover = null; draw(rect); }, { passive: true });
       canvas.addEventListener("mouseleave", () => draw(rect));
+      layoutFallback = function () { rect = layout(); draw(rect); };
       window.addEventListener("resize", () => { rect = layout(); draw(rect); });
       document.getElementById("rangeSelect").addEventListener("change", (e) => {
         rangeYears = Number(e.target.value);
@@ -1278,8 +1776,114 @@
       });
     }
 
+    function setupChartFullscreen() {
+      const shell = document.getElementById("chartShell");
+      const btn = document.getElementById("chartExpand");
+      if (!shell || !btn) return;
+      let savedScroll = { x: 0, y: 0 };
+      let orientationLocked = false;
+      let usedNativeFs = false;
+      let fsActive = false;
+
+      function refreshFsLayout() {
+        if (fsActive) {
+          const portrait = window.innerHeight > window.innerWidth;
+          shell.classList.toggle("is-rotated", portrait);
+        } else {
+          shell.classList.remove("is-rotated");
+        }
+        applyChartChrome();
+        const run = () => {
+          applyChartChrome();
+          if (chart) chart.resize();
+          layoutFallback();
+        };
+        requestAnimationFrame(() => requestAnimationFrame(run));
+      }
+
+      async function enterFs() {
+        if (fsActive) return;
+        savedScroll = { x: window.scrollX, y: window.scrollY };
+        fsActive = true;
+        document.documentElement.classList.add("chart-fs-on");
+        document.body.classList.add("chart-fs-on");
+        shell.classList.add("is-fs");
+        btn.setAttribute("aria-label", "退出全屏");
+        btn.setAttribute("title", "退出全屏");
+        try {
+          const req = shell.requestFullscreen || shell.webkitRequestFullscreen;
+          if (req) await req.call(shell);
+        } catch (err) {}
+        usedNativeFs = !!(document.fullscreenElement === shell || document.webkitFullscreenElement === shell);
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            await screen.orientation.lock("landscape");
+            orientationLocked = true;
+          }
+        } catch (err) {
+          orientationLocked = false;
+        }
+        refreshFsLayout();
+      }
+
+      async function exitFs() {
+        if (!fsActive) return;
+        fsActive = false;
+        hideChartPointer();
+        shell.classList.remove("is-fs", "is-rotated");
+        document.documentElement.classList.remove("chart-fs-on");
+        document.body.classList.remove("chart-fs-on");
+        btn.setAttribute("aria-label", "横向全屏");
+        btn.setAttribute("title", "横向全屏");
+        try {
+          if (orientationLocked && screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
+          }
+        } catch (err) {}
+        orientationLocked = false;
+        const nativeEl = document.fullscreenElement || document.webkitFullscreenElement;
+        usedNativeFs = false;
+        if (nativeEl) {
+          try {
+            const ex = document.exitFullscreen || document.webkitExitFullscreen;
+            if (ex) await ex.call(document);
+          } catch (err) {}
+        }
+        refreshFsLayout();
+        window.scrollTo(savedScroll.x, savedScroll.y);
+      }
+
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (fsActive) exitFs();
+        else enterFs();
+      });
+      document.addEventListener("keydown", (e) => {
+        if ((e.key === "Escape" || e.key === "Esc") && fsActive) {
+          e.preventDefault();
+          exitFs();
+        }
+      });
+      function onNativeFsChange() {
+        const current = document.fullscreenElement || document.webkitFullscreenElement;
+        if (usedNativeFs && fsActive && current !== shell) {
+          usedNativeFs = false;
+          exitFs();
+        }
+      }
+      document.addEventListener("fullscreenchange", onNativeFsChange);
+      document.addEventListener("webkitfullscreenchange", onNativeFsChange);
+      window.addEventListener("resize", () => { if (fsActive) refreshFsLayout(); });
+      window.addEventListener("orientationchange", () => { if (fsActive) refreshFsLayout(); });
+      if (screen.orientation) {
+        screen.orientation.addEventListener("change", () => { if (fsActive) refreshFsLayout(); });
+      }
+    }
+
     if (window.echarts) mountEcharts();
     else mountFallback();
+    setupChartFullscreen();
 
     const LIVE_GOLD_URL = "https://api.gold-api.com/price/XAU";
     const LIVE_GOLD_FALLBACK_URL = "https://xaus.com/api/v1/spot?currency=USD&unit=oz";
