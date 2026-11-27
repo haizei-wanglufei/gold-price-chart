@@ -1785,6 +1785,10 @@
       let usedNativeFs = false;
       let fsActive = false;
 
+      function nativeFsElement() {
+        return document.fullscreenElement || document.webkitFullscreenElement || null;
+      }
+
       function refreshFsLayout() {
         if (fsActive) {
           const portrait = window.innerHeight > window.innerWidth;
@@ -1801,29 +1805,60 @@
         requestAnimationFrame(() => requestAnimationFrame(run));
       }
 
-      async function enterFs() {
+      function requestNativeFullscreen() {
+        const targets = [document.documentElement, document.body, shell];
+        const options = { navigationUI: "hide" };
+        for (const el of targets) {
+          const req = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
+          if (!req) continue;
+          try {
+            return Promise.resolve(req.call(el, options)).catch(() => {
+              try { return Promise.resolve(req.call(el)); } catch (err) { return Promise.resolve(); }
+            });
+          } catch (err) {
+            try { return Promise.resolve(req.call(el)); } catch (err2) {}
+          }
+        }
+        return Promise.resolve();
+      }
+
+      function lockLandscape() {
+        const ori = screen.orientation;
+        if (ori && typeof ori.lock === "function") {
+          return ori.lock("landscape").then(() => {
+            orientationLocked = true;
+          }).catch(() => ori.lock("landscape-primary").then(() => {
+            orientationLocked = true;
+          }).catch(() => {}));
+        }
+        const legacy = screen.lockOrientation || screen.mozLockOrientation || screen.msLockOrientation;
+        if (legacy) {
+          try { orientationLocked = !!legacy.call(screen, "landscape"); } catch (err) {}
+        }
+        return Promise.resolve();
+      }
+
+      function enterFs() {
         if (fsActive) return;
         savedScroll = { x: window.scrollX, y: window.scrollY };
         fsActive = true;
         document.documentElement.classList.add("chart-fs-on");
         document.body.classList.add("chart-fs-on");
         shell.classList.add("is-fs");
+        if (window.innerHeight > window.innerWidth) shell.classList.add("is-rotated");
         btn.setAttribute("aria-label", "退出全屏");
         btn.setAttribute("title", "退出全屏");
-        try {
-          const req = shell.requestFullscreen || shell.webkitRequestFullscreen;
-          if (req) await req.call(shell);
-        } catch (err) {}
-        usedNativeFs = !!(document.fullscreenElement === shell || document.webkitFullscreenElement === shell);
-        try {
-          if (screen.orientation && screen.orientation.lock) {
-            await screen.orientation.lock("landscape");
-            orientationLocked = true;
-          }
-        } catch (err) {
-          orientationLocked = false;
-        }
+        // Call both APIs in the same user-gesture turn; do not await fullscreen before locking.
+        const fsPromise = requestNativeFullscreen();
+        const lockPromise = lockLandscape();
+        usedNativeFs = true;
         refreshFsLayout();
+        Promise.all([fsPromise, lockPromise]).then(() => {
+          if (!fsActive) return;
+          usedNativeFs = !!nativeFsElement();
+          const after = !orientationLocked ? lockLandscape() : Promise.resolve();
+          return after.then(refreshFsLayout);
+        });
       }
 
       async function exitFs() {
@@ -1841,11 +1876,11 @@
           }
         } catch (err) {}
         orientationLocked = false;
-        const nativeEl = document.fullscreenElement || document.webkitFullscreenElement;
+        const nativeEl = nativeFsElement();
         usedNativeFs = false;
         if (nativeEl) {
           try {
-            const ex = document.exitFullscreen || document.webkitExitFullscreen;
+            const ex = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
             if (ex) await ex.call(document);
           } catch (err) {}
         }
@@ -1866,8 +1901,13 @@
         }
       });
       function onNativeFsChange() {
-        const current = document.fullscreenElement || document.webkitFullscreenElement;
-        if (usedNativeFs && fsActive && current !== shell) {
+        const current = nativeFsElement();
+        if (current) {
+          usedNativeFs = true;
+          if (fsActive && !orientationLocked) {
+            lockLandscape().then(refreshFsLayout);
+          }
+        } else if (usedNativeFs && fsActive) {
           usedNativeFs = false;
           exitFs();
         }
