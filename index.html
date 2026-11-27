@@ -780,6 +780,8 @@
     let rangeYears = 1;
     let zoomReady = false;
     let currentMinMag = 1;
+    let zoomDotsHidden = false;
+    let zoomDotsTimer = 0;
     let liveSpot = null;
     let liveFx = null;
     let liveStatus = "loading";
@@ -948,10 +950,33 @@
       const changed = next !== currentMinMag;
       currentMinMag = next;
       updateZoomHint();
-      if (changed && chart && !(opts && opts.updateSeries === false)) {
+      if (changed && chart && !zoomDotsHidden && !(opts && opts.updateSeries === false)) {
         chart.setOption({ series: [{ id: "events", data: scatterData() }] });
       }
       return changed;
+    }
+    function setEventDotsVisible(visible) {
+      if (!chart) return;
+      const hide = !visible;
+      if (hide === zoomDotsHidden) return;
+      zoomDotsHidden = hide;
+      if (hide) {
+        if (typeof hideChartPointer === "function") hideChartPointer();
+        chart.setOption({ series: [{ id: "events", data: [] }] });
+      } else {
+        updateEventFilter({ updateSeries: false });
+        chart.setOption({ series: [{ id: "events", data: scatterData() }] });
+      }
+    }
+    function armShowEventDots(delay) {
+      if (!zoomDotsHidden) return;
+      clearTimeout(zoomDotsTimer);
+      zoomDotsTimer = setTimeout(() => setEventDotsVisible(true), delay);
+    }
+    function onManualZoom() {
+      if (!zoomDotsHidden) setEventDotsVisible(false);
+      else updateEventFilter({ updateSeries: false });
+      armShowEventDots(240);
     }
     function yNiceMin(v) {
       const span = Math.max(1, v.max - v.min);
@@ -998,7 +1023,7 @@
         xAxis: { axisLabel: { fontSize: chrome.axisFont } },
         dataZoom: [{}, { height: chrome.sliderHeight, bottom: chrome.sliderBottom }],
         series: [
-          { id: "events", data: scatterData() },
+          { id: "events", data: zoomDotsHidden ? [] : scatterData() },
           { id: "spot", data: liveSpotData() }
         ]
       });
@@ -1644,7 +1669,12 @@
       updateEventFilter({ updateSeries: false });
       bindCustomPointer(el);
       applyChartChrome();
-      chart.on("datazoom", () => updateEventFilter());
+      chart.on("datazoom", onManualZoom);
+      const endZoomPointer = () => armShowEventDots(120);
+      el.addEventListener("mouseup", endZoomPointer);
+      el.addEventListener("touchend", endZoomPointer, { passive: true });
+      el.addEventListener("touchcancel", endZoomPointer, { passive: true });
+      el.addEventListener("pointerup", endZoomPointer);
       const onViewportChange = () => {
         if (!chart) return;
         applyChartChrome();
