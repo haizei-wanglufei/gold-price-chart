@@ -470,7 +470,7 @@
     <footer>
       <h2>数据说明</h2>
       <p id="srcLine"></p>
-      <p>价格原序列为美元/金衡盎司，频率为伦敦营业日的每日上午定盘（LBMA Gold Price AM，早期亦称 London Gold Fix AM）。页面可按当日汇率把价格换算为人民币、欧元、英镑或日元。人民币按每克计价（1 金衡盎司 = 31.1034768 克），其他货币仍为每金衡盎司。人民币汇率优先采用美联储 H.10 纽约午盘（FRED 序列 DEXCHUS，截至 2026-11-13）；其后尚未公布的交易日，以及欧元、英镑、日元，采用欧洲央行参考汇率。周末与假日缺测向前一个营业日填充。打开或刷新页面时，会额外向公开接口请求一次最新现货报价（与上午定盘分开标注，不是伦敦定盘）；若请求失败，页面仍只显示已存储的定盘序列。事件来自官方公告或公开报道，简介仅说明事件及其与金价的关系，并附来源链接；事件并不穷尽全部影响因素。</p>
+      <p>价格原序列为美元/金衡盎司，频率为伦敦营业日的每日上午定盘（LBMA Gold Price AM，早期亦称 London Gold Fix AM）。页面可按当日汇率把价格换算为人民币、欧元、英镑或日元。人民币按每克计价（1 金衡盎司 = 31.1034768 克），其他货币仍为每金衡盎司。人民币汇率优先采用美联储 H.10 纽约午盘（FRED 序列 DEXCHUS，截至 2026-11-20 为 6.6770）；其后尚未公布的交易日，以及欧元、英镑、日元，采用欧洲央行参考汇率。周末与假日缺测向前一个营业日填充。打开或刷新页面时，会额外向公开接口请求一次最新现货报价（与上午定盘分开标注，不是伦敦定盘）；若请求失败，页面仍只显示已存储的定盘序列。事件来自官方公告或公开报道，简介仅说明事件及其与金价的关系，并附来源链接；事件并不穷尽全部影响因素。</p>
       <p>Westmetall 2008 年部分日期混用了下午定盘，故 2008 年改用 SD Bullion 上午定盘以保持口径一致。2009 年之后的西冶金表格中有三处明显刊误（2022-07-20、2024-05-17、2026-01-02），已按同日 SD Bullion 上午定盘更正，详见 <a href="data/prices.json">prices.json</a>。</p>
       <p id="updateLine"></p>
     </footer>
@@ -757,12 +757,12 @@
       "2008 年来自 <a href='https://sdbullion.com/gold-prices-2008' target='_blank' rel='noopener'>SD Bullion</a>；" +
       "2009–2026 年来自 <a href='https://www.westmetall.com/en/markdaten.php?action=table&amp;field=USD_ozt_London&amp;year=2026' target='_blank' rel='noopener'>Westmetall</a>。" +
       "交叉核对还包括世界黄金协会、英国皇家铸币厂、GoldSilver 与路透社报道。" +
-      "人民币汇率来自 <a href='https://fred.stlouisfed.org/series/DEXCHUS' target='_blank' rel='noopener'>美联储 H.10 / FRED DEXCHUS</a>（纽约午盘，截至 2026-11-13 为 6.6710），此后交易日以及欧元、英镑、日元来自 <a href='https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html' target='_blank' rel='noopener'>欧洲央行参考汇率</a>。" +
+      "人民币汇率来自 <a href='https://fred.stlouisfed.org/series/DEXCHUS' target='_blank' rel='noopener'>美联储 H.10 / FRED DEXCHUS</a>（纽约午盘，截至 2026-11-20 为 6.6770），此后交易日以及欧元、英镑、日元来自 <a href='https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html' target='_blank' rel='noopener'>欧洲央行参考汇率</a>。" +
       "打开或刷新页面时，会向 <a href='https://gold-api.com' target='_blank' rel='noopener'>Gold-API.com</a> 的 <a href='https://api.gold-api.com/price/XAU' target='_blank' rel='noopener'>/price/XAU</a> 请求一次最新现货（美元/金衡盎司，非伦敦定盘；若该接口不可用，再尝试 <a href='https://xaus.com/api/' target='_blank' rel='noopener'>XAUS</a>）。" +
       "现货换算汇率优先采用 <a href='https://www.exchangerate-api.com' target='_blank' rel='noopener'>ExchangeRate-API</a> 开放接口 <a href='https://open.er-api.com/v6/latest/USD' target='_blank' rel='noopener'>open.er-api.com</a>，失败时改用本页已存储的最近汇率。" +
       "完整引用见 <a href='data/prices.json'>prices.json</a>、<a href='data/events.json'>events.json</a> 与 <a href='data/fx.json'>fx.json</a>。";
     document.getElementById("updateLine").textContent =
-      "页面更新日期：2026年11月20日（亚洲/上海时区）。" + meta.coverage_note;
+      "页面更新日期：2026年11月27日（亚洲/上海时区）。" + meta.coverage_note;
 
     const chips = document.getElementById("chips");
     const typeLegend = document.getElementById("typeLegend");

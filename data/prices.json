@@ -6,11 +6,11 @@
     "unit_zh": "美元/金衡盎司",
     "frequency": "daily (London business days; weekends and UK bank holidays omitted)",
     "start": "2006-11-01",
-    "end": "2026-11-19",
-    "points": 5050,
+    "end": "2026-11-25",
+    "points": 5054,
     "latest": {
-      "date": "2026-11-19",
-      "price": 3727.35
+      "date": "2026-11-25",
+      "price": 3533.2
     },
     "range_high": {
       "date": "2026-01-29",
@@ -20,9 +20,9 @@
       "date": "2007-01-08",
       "price": 608.3
     },
-    "retrieved_at": "2026-11-20",
-    "timezone_note": "页面标注的更新日期按亚洲/上海时区。最新价为已公布的最近一个伦敦交易日，而非 2026-11-20 当日。",
-    "coverage_note": "截至采集时，Westmetall 与 GoldSilver 公布的最近一日为 2026-11-19（星期四）。2026-11-20（星期五）的上午定盘当时尚未出现在上述公开表格中。",
+    "retrieved_at": "2026-11-27",
+    "timezone_note": "页面标注的更新日期按亚洲/上海时区。最新价为已公布的最近一个伦敦交易日，而非 2026-11-27 当日。",
+    "coverage_note": "截至采集时，Westmetall 与 GoldSilver 公布的最近一日为 2026-11-25（星期三）。2026-11-26（星期四）的上午定盘当时尚未出现在上述两份公开表格中（意大利金属商 Doma Srl 的定盘表已列示该日上午定盘 3,562.40 美元，待西冶金或 GoldSilver 公布后再纳入）。2026-11-27（星期五）的上午定盘在采集时（亚洲/上海时区上午）尚未公布。",
     "sources": [
       {
         "period": "2006-11-01 至 2007-12-31",
@@ -38,10 +38,10 @@
         "note": "采用 SD Bullion 公布的伦敦上午定盘，以保证全日均为上午定盘。Westmetall 2008 年 1–2 月部分日期写入的是下午定盘，故该年不采用 Westmetall。"
       },
       {
-        "period": "2009-01-02 至 2026-11-19",
+        "period": "2009-01-02 至 2026-11-25",
         "field": "Gold London Fixing（经核对为伦敦上午定盘）",
         "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=USD_ozt_London&year=2026",
-        "note": "Westmetall 分年表格。与 SD Bullion、GoldSilver 的上午定盘交叉核对：2011-09-05 为 1,896.50；2022-02-24 为 1,968.35；2024-09-18 为 2,568.35；2026-01-29 为 5,501.70；2026-11-19 为 3,727.35。三处明显刊误已按 SD Bullion 上午定盘更正，详见 corrections。"
+        "note": "Westmetall 分年表格。与 SD Bullion、GoldSilver 的上午定盘交叉核对：2011-09-05 为 1,896.50；2022-02-24 为 1,968.35；2024-09-18 为 2,568.35；2026-01-29 为 5,501.70；2026-11-20 为 3,583.85；2026-11-23 为 3,617.75；2026-11-24 为 3,622.55；2026-11-25 为 3,533.20。三处明显刊误已按 SD Bullion 上午定盘更正，详见 corrections。"
       }
     ],
     "corrections": [
@@ -138,10 +138,11 @@
           "date": "2026-01-29",
           "price": 5501.7
         },
-        "second_source": "SD Bullion：2026-01-29 上午定盘 5,501.70、下午定盘 5,405.00。世界黄金协会记载 LBMA 下午定盘纪录为 2026-01-29 的 5,405 美元。2026-11-19 上午定盘 3,727.35 与 GoldSilver、Westmetall 一致。",
+        "second_source": "SD Bullion：2026-01-29 上午定盘 5,501.70、下午定盘 5,405.00。世界黄金协会记载 LBMA 下午定盘纪录为 2026-01-29 的 5,405 美元。新增交易日上午定盘与 GoldSilver 伦敦定盘表、Doma Srl 定盘表一致：2026-11-20 为 3,583.85，2026-11-23 为 3,617.75，2026-11-24 为 3,622.55，2026-11-25 为 3,533.20。",
         "url": "https://sdbullion.com/gold-prices-2026",
         "url2": "https://www.gold.org/goldhub/research/gold-market-commentary-march-2026",
-        "url3": "https://goldsilver.com/price-charts/historical-london-fix/2026/"
+        "url3": "https://goldsilver.com/price-charts/historical-london-fix/",
+        "url4": "https://www.doma.srl/en/fixing-2026/"
       }
     ],
     "disclaimer": "价格来自公开转载的伦敦定盘，供教育与可视化使用，并非实时行情，也不能替代 IBA/LBMA 授权的基准数据。"
@@ -20346,6 +20347,22 @@
     {
       "date": "2026-11-19",
       "price": 3727.35
+    },
+    {
+      "date": "2026-11-20",
+      "price": 3583.85
+    },
+    {
+      "date": "2026-11-23",
+      "price": 3617.75
+    },
+    {
+      "date": "2026-11-24",
+      "price": 3622.55
+    },
+    {
+      "date": "2026-11-25",
+      "price": 3533.2
     }
   ]
 }
